@@ -20,7 +20,7 @@ import java.time.Duration;
 import java.util.Base64;
 
 @Configuration
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties({JwtProperties.class, LoginBloqueioProperties.class})
 public class JwtConfig {
 
     public static final String ROLE_CLAIM = "role";

@@ -1,11 +1,14 @@
 package com.mentesvivas.backend.exception.handler;
 
 import com.mentesvivas.backend.exception.auth.AutenticacaoException;
+import com.mentesvivas.backend.exception.auth.ContaBloqueadaException;
 import com.mentesvivas.backend.exception.common.ConflitoException;
 import com.mentesvivas.backend.exception.common.RecursoNaoEncontradoException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -31,6 +34,16 @@ public class ApiExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     ProblemDetail handleCorpoIlegivel(HttpMessageNotReadableException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Corpo da requisicao ausente ou mal formatado");
+    }
+
+    @ExceptionHandler(ContaBloqueadaException.class)
+    ResponseEntity<ProblemDetail> handleContaBloqueada(ContaBloqueadaException ex) {
+        long segundos = Math.max(1, ex.getTempoRestante().toSeconds());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
+        problem.setProperty("retryAfterSeconds", segundos);
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, Long.toString(segundos))
+                .body(problem);
     }
 
     @ExceptionHandler(AutenticacaoException.class)
