@@ -31,4 +31,10 @@ public class LoginController {
     public ResponseEntity<TokenResponse> refresh(@Valid @RequestBody RefreshRequest body) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(tokenService.renovar(body.refreshToken()));
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshRequest body) {
+        tokenService.encerrar(body.refreshToken());
+        return ResponseEntity.noContent().build();
+    }
 }

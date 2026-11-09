@@ -34,6 +34,11 @@ public class TokenService {
                 UsuarioMapper.toResponse(usuario));
     }
 
+    @Transactional
+    public void encerrar(String refreshToken) {
+        refreshTokenService.revogar(refreshToken);
+    }
+
     @Transactional(noRollbackFor = SessaoInvalidaException.class)
     public TokenResponse renovar(String refreshToken) {
         return emitir(refreshTokenService.consumir(refreshToken));

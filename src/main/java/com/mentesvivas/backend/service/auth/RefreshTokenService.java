@@ -37,6 +37,18 @@ public class RefreshTokenService {
         return valor;
     }
 
+    @Transactional
+    public void revogar(String valor) {
+        refreshTokenRepository.findByTokenHash(tokenHasher.hash(valor))
+                .filter(token -> token.getRevogadoEm() == null)
+                .ifPresent(token -> token.setRevogadoEm(Instant.now()));
+    }
+
+    @Transactional
+    public void revogarTodos(Usuario usuario) {
+        refreshTokenRepository.revogarTodosDoUsuario(usuario.getId(), Instant.now());
+    }
+
     @Transactional(noRollbackFor = SessaoInvalidaException.class)
     public Usuario consumir(String valor) {
         Instant agora = Instant.now();
