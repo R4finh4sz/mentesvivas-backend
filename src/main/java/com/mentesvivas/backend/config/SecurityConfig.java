@@ -1,6 +1,6 @@
 package com.mentesvivas.backend.config;
 
-import com.mentesvivas.backend.entity.usuario.Role;
+import com.mentesvivas.backend.entity.user.Role;
 import com.mentesvivas.backend.security.auth.RoleJwtAuthenticationConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,7 +22,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/terms").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/terms").hasRole(Role.ADMINISTRADOR.name())
+                        .requestMatchers(HttpMethod.POST, "/api/terms").hasRole(Role.ADMINISTRATOR.name())
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(roleConverter)))

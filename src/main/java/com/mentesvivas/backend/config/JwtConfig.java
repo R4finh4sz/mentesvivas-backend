@@ -1,6 +1,6 @@
 package com.mentesvivas.backend.config;
 
-import com.mentesvivas.backend.exception.config.ConfiguracaoInvalidaException;
+import com.mentesvivas.backend.exception.config.InvalidConfigurationException;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -20,12 +20,13 @@ import java.time.Duration;
 import java.util.Base64;
 
 @Configuration
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties({JwtProperties.class, LoginLockoutProperties.class,
+        PasswordRecoveryProperties.class, EmailProperties.class})
 public class JwtConfig {
 
     public static final String ROLE_CLAIM = "role";
 
-    private static final int CHAVE_BYTES_MINIMO = 32;
+    private static final int KEY_MIN_BYTES = 32;
 
     @Bean
     SecretKey jwtSigningKey(JwtProperties properties) {
@@ -33,10 +34,10 @@ public class JwtConfig {
         try {
             bytes = Base64.getDecoder().decode(properties.secret() == null ? "" : properties.secret());
         } catch (IllegalArgumentException ex) {
-            throw new ConfiguracaoInvalidaException("JWT_SECRET deve estar em Base64.", ex);
+            throw new InvalidConfigurationException("JWT_SECRET must be Base64.", ex);
         }
-        if (bytes.length < CHAVE_BYTES_MINIMO) {
-            throw new ConfiguracaoInvalidaException("JWT_SECRET deve conter pelo menos 32 bytes aleatorios em Base64.");
+        if (bytes.length < KEY_MIN_BYTES) {
+            throw new InvalidConfigurationException("JWT_SECRET must contain at least 32 random bytes in Base64.");
         }
         return new SecretKeySpec(bytes, "HmacSHA256");
     }

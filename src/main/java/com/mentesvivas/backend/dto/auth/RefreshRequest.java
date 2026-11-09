@@ -1,6 +1,6 @@
 package com.mentesvivas.backend.dto.auth;
 
-import com.mentesvivas.backend.util.Normalizacao;
+import com.mentesvivas.backend.util.Normalization;
 import jakarta.validation.constraints.NotBlank;
 
 public record RefreshRequest(
@@ -8,6 +8,6 @@ public record RefreshRequest(
 ) {
 
     public RefreshRequest {
-        refreshToken = Normalizacao.token(refreshToken);
+        refreshToken = Normalization.token(refreshToken);
     }
 }
