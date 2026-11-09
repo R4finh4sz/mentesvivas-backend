@@ -7,6 +7,7 @@ import com.mentesvivas.backend.entity.user.Role;
 import com.mentesvivas.backend.entity.user.User;
 import com.mentesvivas.backend.mapper.user.UserMapper;
 import com.mentesvivas.backend.repository.user.UserRepository;
+import com.mentesvivas.backend.service.auth.EmailConfirmationService;
 import com.mentesvivas.backend.service.terms.TermsAcceptanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,6 +24,7 @@ public class RegistrationService {
     private final UserUniquenessValidator uniquenessValidator;
     private final PasswordEncoder passwordEncoder;
     private final TermsAcceptanceService termsAcceptanceService;
+    private final EmailConfirmationService emailConfirmationService;
 
     @Transactional
     public UserResponse register(RegistrationRequest request) {
@@ -48,6 +50,7 @@ public class RegistrationService {
     private UserResponse saveWithAcceptance(User user, Integer termsVersion) {
         User saved = userRepository.save(user);
         termsAcceptanceService.register(saved, termsVersion);
+        emailConfirmationService.sendCodeKeepingFlow(saved);
         return UserMapper.toResponse(saved);
     }
 

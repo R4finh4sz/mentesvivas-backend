@@ -9,6 +9,7 @@ public final class UserMapper {
     }
 
     public static UserResponse toResponse(User user) {
-        return new UserResponse(user.getId(), user.getFullName(), user.getEmail(), user.getRole());
+        return new UserResponse(user.getId(), user.getFullName(), user.getEmail(), user.getRole(),
+                user.isEmailConfirmed());
     }
 }
