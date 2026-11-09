@@ -1,6 +1,7 @@
 package com.mentesvivas.backend.dto.auth;
 
 import com.mentesvivas.backend.util.Normalization;
+import com.mentesvivas.backend.validation.StrongPassword;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -12,7 +13,7 @@ import java.util.Objects;
 public record ResetPasswordRequest(
         @NotBlank @Email @Size(max = 254) String email,
         @NotBlank @Pattern(regexp = "^\\d{6}$", message = "o codigo possui seis digitos") String code,
-        @NotBlank @Size(min = 8, max = 72, message = "a senha deve ter entre 8 e 72 caracteres") String newPassword,
+        @NotBlank @StrongPassword @Size(min = 8, max = 72, message = "a senha deve ter entre 8 e 72 caracteres") String newPassword,
         @NotBlank String passwordConfirmation
 ) {
 

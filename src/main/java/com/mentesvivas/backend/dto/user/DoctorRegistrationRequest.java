@@ -2,6 +2,7 @@ package com.mentesvivas.backend.dto.user;
 
 import com.mentesvivas.backend.util.BrazilianState;
 import com.mentesvivas.backend.util.Normalization;
+import com.mentesvivas.backend.validation.StrongPassword;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -17,7 +18,7 @@ public record DoctorRegistrationRequest(
         @NotBlank @CPF String cpf,
         @NotBlank @Pattern(regexp = "^\\d{10,11}$", message = "informe DDD e numero, apenas digitos") String phone,
         @NotBlank @Email @Size(max = 254) String email,
-        @NotBlank @Size(min = 8, max = 72, message = "a senha deve ter entre 8 e 72 caracteres") String password,
+        @NotBlank @StrongPassword @Size(min = 8, max = 72, message = "a senha deve ter entre 8 e 72 caracteres") String password,
         @NotBlank String passwordConfirmation,
         @NotBlank @Pattern(regexp = "^\\d{1,10}$", message = "CRM deve conter apenas digitos") String crm,
         @NotBlank @Pattern(
