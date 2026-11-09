@@ -9,6 +9,7 @@ public class CodePolicyConfig {
 
     public static final String PASSWORD_RECOVERY = "passwordRecoveryPolicy";
     public static final String EMAIL_CONFIRMATION = "emailConfirmationPolicy";
+    public static final String TWO_FACTOR = "twoFactorPolicy";
 
     @Bean(PASSWORD_RECOVERY)
     CodePolicy passwordRecoveryPolicy(PasswordRecoveryProperties properties) {
@@ -19,6 +20,12 @@ public class CodePolicyConfig {
     @Bean(EMAIL_CONFIRMATION)
     CodePolicy emailConfirmationPolicy(EmailConfirmationProperties properties) {
         return new CodePolicy("email-confirmation", properties.codeValidity(), properties.maxAttempts(),
+                properties.maxSends(), properties.sendsWindow());
+    }
+
+    @Bean(TWO_FACTOR)
+    CodePolicy twoFactorPolicy(TwoFactorProperties properties) {
+        return new CodePolicy("two-factor", properties.codeValidity(), properties.maxAttempts(),
                 properties.maxSends(), properties.sendsWindow());
     }
 }
