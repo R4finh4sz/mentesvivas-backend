@@ -2,8 +2,8 @@ package com.mentesvivas.backend.service.auth;
 
 import com.mentesvivas.backend.config.JwtProperties;
 import com.mentesvivas.backend.entity.auth.RefreshToken;
-import com.mentesvivas.backend.entity.usuario.Usuario;
-import com.mentesvivas.backend.exception.auth.SessaoInvalidaException;
+import com.mentesvivas.backend.entity.user.User;
+import com.mentesvivas.backend.exception.auth.InvalidSessionException;
 import com.mentesvivas.backend.repository.auth.RefreshTokenRepository;
 import com.mentesvivas.backend.security.auth.TokenHasher;
 import lombok.RequiredArgsConstructor;
@@ -24,46 +24,46 @@ public class RefreshTokenService {
     private final TokenHasher tokenHasher;
 
     @Transactional
-    public String criar(Usuario usuario) {
+    public String create(User user) {
         byte[] bytes = new byte[32];
         secureRandom.nextBytes(bytes);
-        String valor = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        String value = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 
         RefreshToken refreshToken = new RefreshToken();
-        refreshToken.setUsuario(usuario);
-        refreshToken.setTokenHash(tokenHasher.hash(valor));
-        refreshToken.setExpiraEm(Instant.now().plus(properties.refreshTokenExpiration()));
+        refreshToken.setUser(user);
+        refreshToken.setTokenHash(tokenHasher.hash(value));
+        refreshToken.setExpiresAt(Instant.now().plus(properties.refreshTokenExpiration()));
         refreshTokenRepository.save(refreshToken);
-        return valor;
+        return value;
     }
 
     @Transactional
-    public void revogar(String valor) {
-        refreshTokenRepository.findByTokenHash(tokenHasher.hash(valor))
-                .filter(token -> token.getRevogadoEm() == null)
-                .ifPresent(token -> token.setRevogadoEm(Instant.now()));
+    public void revoke(String value) {
+        refreshTokenRepository.findByTokenHash(tokenHasher.hash(value))
+                .filter(token -> token.getRevokedAt() == null)
+                .ifPresent(token -> token.setRevokedAt(Instant.now()));
     }
 
     @Transactional
-    public void revogarTodos(Usuario usuario) {
-        refreshTokenRepository.revogarTodosDoUsuario(usuario.getId(), Instant.now());
+    public void revokeAll(User user) {
+        refreshTokenRepository.revokeAllByUser(user.getId(), Instant.now());
     }
 
-    @Transactional(noRollbackFor = SessaoInvalidaException.class)
-    public Usuario consumir(String valor) {
-        Instant agora = Instant.now();
-        RefreshToken atual = refreshTokenRepository.findByTokenHash(tokenHasher.hash(valor))
-                .orElseThrow(SessaoInvalidaException::new);
+    @Transactional(noRollbackFor = InvalidSessionException.class)
+    public User consume(String value) {
+        Instant now = Instant.now();
+        RefreshToken current = refreshTokenRepository.findByTokenHash(tokenHasher.hash(value))
+                .orElseThrow(InvalidSessionException::new);
 
-        if (atual.getRevogadoEm() != null) {
-            refreshTokenRepository.revogarTodosDoUsuario(atual.getUsuario().getId(), agora);
-            throw new SessaoInvalidaException();
+        if (current.getRevokedAt() != null) {
+            refreshTokenRepository.revokeAllByUser(current.getUser().getId(), now);
+            throw new InvalidSessionException();
         }
-        if (!atual.isAtivo(agora)) {
-            throw new SessaoInvalidaException();
+        if (!current.isActive(now)) {
+            throw new InvalidSessionException();
         }
 
-        atual.setRevogadoEm(agora);
-        return atual.getUsuario();
+        current.setRevokedAt(now);
+        return current.getUser();
     }
 }

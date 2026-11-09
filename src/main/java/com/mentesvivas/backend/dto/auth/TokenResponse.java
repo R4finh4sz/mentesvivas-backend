@@ -1,7 +1,7 @@
 package com.mentesvivas.backend.dto.auth;
 
-import com.mentesvivas.backend.dto.usuario.UsuarioResponse;
-import com.mentesvivas.backend.entity.usuario.Role;
+import com.mentesvivas.backend.dto.user.UserResponse;
+import com.mentesvivas.backend.entity.user.Role;
 
 public record TokenResponse(
         String accessToken,
@@ -10,7 +10,7 @@ public record TokenResponse(
         long expiresIn,
         long refreshExpiresIn,
         Role role,
-        boolean termosAceitos,
-        UsuarioResponse usuario
+        boolean termsAccepted,
+        UserResponse user
 ) {
 }

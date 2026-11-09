@@ -2,10 +2,10 @@ package com.mentesvivas.backend.service.auth;
 
 import com.mentesvivas.backend.config.JwtProperties;
 import com.mentesvivas.backend.dto.auth.TokenResponse;
-import com.mentesvivas.backend.entity.usuario.Usuario;
-import com.mentesvivas.backend.exception.auth.SessaoInvalidaException;
-import com.mentesvivas.backend.mapper.usuario.UsuarioMapper;
-import com.mentesvivas.backend.service.termos.AceiteTermosService;
+import com.mentesvivas.backend.entity.user.User;
+import com.mentesvivas.backend.exception.auth.InvalidSessionException;
+import com.mentesvivas.backend.mapper.user.UserMapper;
+import com.mentesvivas.backend.service.terms.TermsAcceptanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,29 +18,29 @@ public class TokenService {
 
     private final AccessTokenService accessTokenService;
     private final RefreshTokenService refreshTokenService;
-    private final AceiteTermosService aceiteTermosService;
+    private final TermsAcceptanceService termsAcceptanceService;
     private final JwtProperties properties;
 
     @Transactional
-    public TokenResponse emitir(Usuario usuario) {
+    public TokenResponse issue(User user) {
         return new TokenResponse(
-                accessTokenService.gerar(usuario),
-                refreshTokenService.criar(usuario),
+                accessTokenService.generate(user),
+                refreshTokenService.create(user),
                 TOKEN_TYPE,
                 properties.accessTokenExpiration().toSeconds(),
                 properties.refreshTokenExpiration().toSeconds(),
-                usuario.getRole(),
-                aceiteTermosService.aceitouVersaoAtual(usuario),
-                UsuarioMapper.toResponse(usuario));
+                user.getRole(),
+                termsAcceptanceService.acceptedCurrentVersion(user),
+                UserMapper.toResponse(user));
     }
 
     @Transactional
-    public void encerrar(String refreshToken) {
-        refreshTokenService.revogar(refreshToken);
+    public void end(String refreshToken) {
+        refreshTokenService.revoke(refreshToken);
     }
 
-    @Transactional(noRollbackFor = SessaoInvalidaException.class)
-    public TokenResponse renovar(String refreshToken) {
-        return emitir(refreshTokenService.consumir(refreshToken));
+    @Transactional(noRollbackFor = InvalidSessionException.class)
+    public TokenResponse renew(String refreshToken) {
+        return issue(refreshTokenService.consume(refreshToken));
     }
 }

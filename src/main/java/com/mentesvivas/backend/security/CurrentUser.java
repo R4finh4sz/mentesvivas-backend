@@ -1,8 +1,8 @@
 package com.mentesvivas.backend.security;
 
-import com.mentesvivas.backend.entity.usuario.Usuario;
+import com.mentesvivas.backend.entity.user.User;
 
 public interface CurrentUser {
 
-    Usuario get();
+    User get();
 }

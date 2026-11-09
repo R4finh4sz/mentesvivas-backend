@@ -1,8 +1,8 @@
 package com.mentesvivas.backend.controller.auth;
 
 import com.jayway.jsonpath.JsonPath;
-import com.mentesvivas.backend.support.LimparArmazenamentoTemporario;
-import com.mentesvivas.backend.support.TermosTestSupport;
+import com.mentesvivas.backend.support.ClearTemporaryStorage;
+import com.mentesvivas.backend.support.TermsTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,12 +23,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-@ExtendWith(LimparArmazenamentoTemporario.class)
+@ExtendWith(ClearTemporaryStorage.class)
 @AutoConfigureMockMvc
 @Transactional
 class AuthControllerTest {
 
-    private static final String SENHA = "senhaForte1";
+    private static final String PASSWORD = "senhaForte1";
 
     @Autowired
     private MockMvc mockMvc;
@@ -37,80 +37,80 @@ class AuthControllerTest {
     private JwtDecoder jwtDecoder;
 
     @Autowired
-    private TermosTestSupport termos;
+    private TermsTestSupport terms;
 
-    private int versaoTermos;
+    private int termsVersion;
 
     @BeforeEach
-    void publicarTermos() {
-        versaoTermos = termos.publicar();
+    void publishTerms() {
+        termsVersion = terms.publish();
     }
 
     @Test
-    void registraPacienteELoginRetornaRoleNoCorpoENoJwt() throws Exception {
-        registrarApp("Maria@Exemplo.com", "529.982.247-25", "PACIENTE")
+    void registersPatientAndLoginReturnsRoleInBodyAndJwt() throws Exception {
+        registerApp("Maria@Exemplo.com", "529.982.247-25", "PATIENT")
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.email").value("maria@exemplo.com"))
-                .andExpect(jsonPath("$.role").value("PACIENTE"));
+                .andExpect(jsonPath("$.role").value("PATIENT"));
 
-        String body = login("MARIA@exemplo.com", SENHA)
+        String body = login("MARIA@exemplo.com", PASSWORD)
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.role").value("PACIENTE"))
+                .andExpect(jsonPath("$.role").value("PATIENT"))
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
                 .andExpect(jsonPath("$.expiresIn").value(1800))
                 .andExpect(jsonPath("$.refreshExpiresIn").value(3600))
-                .andExpect(jsonPath("$.termosAceitos").value(true))
+                .andExpect(jsonPath("$.termsAccepted").value(true))
                 .andReturn().getResponse().getContentAsString();
 
         Jwt jwt = jwtDecoder.decode(JsonPath.read(body, "$.accessToken"));
-        assertThat(jwt.getClaimAsString("role")).isEqualTo("PACIENTE");
+        assertThat(jwt.getClaimAsString("role")).isEqualTo("PATIENT");
     }
 
     @Test
-    void registraMedicoComCrm() throws Exception {
-        mockMvc.perform(post("/api/auth/register/medico").contentType(MediaType.APPLICATION_JSON).content("""
-                        {"nomeCompleto":"Dr. Joao","cpf":"12345678909","telefone":"11988887777",
-                         "email":"joao@clinica.com","senha":"%s","confirmacaoSenha":"%s",
-                         "crm":"123456","crmUf":"SP","versaoTermos":%d,"aceiteTermos":true}
-                        """.formatted(SENHA, SENHA, versaoTermos)))
+    void registersDoctorWithCrm() throws Exception {
+        mockMvc.perform(post("/api/auth/register/doctor").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"fullName":"Dr. Joao","cpf":"12345678909","phone":"11988887777",
+                         "email":"joao@clinica.com","password":"%s","passwordConfirmation":"%s",
+                         "crm":"123456","crmState":"SP","termsVersion":%d,"acceptTerms":true}
+                        """.formatted(PASSWORD, PASSWORD, termsVersion)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.role").value("MEDICO"));
+                .andExpect(jsonPath("$.role").value("DOCTOR"));
 
-        login("joao@clinica.com", SENHA)
+        login("joao@clinica.com", PASSWORD)
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.role").value("MEDICO"));
+                .andExpect(jsonPath("$.role").value("DOCTOR"));
     }
 
     @Test
-    void appNaoPermiteAutocadastroDeAdministrador() throws Exception {
-        registrarApp("admin@exemplo.com", "52998224725", "ADMINISTRADOR")
+    void appDoesNotAllowAdministratorSelfRegistration() throws Exception {
+        registerApp("admin@exemplo.com", "52998224725", "ADMINISTRATOR")
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void emailDuplicadoRetornaConflito() throws Exception {
-        registrarApp("ana@exemplo.com", "52998224725", "CUIDADOR").andExpect(status().isCreated());
-        registrarApp("ANA@exemplo.com", "11144477735", "CUIDADOR").andExpect(status().isConflict());
+    void duplicateEmailReturnsConflict() throws Exception {
+        registerApp("ana@exemplo.com", "52998224725", "CAREGIVER").andExpect(status().isCreated());
+        registerApp("ANA@exemplo.com", "11144477735", "CAREGIVER").andExpect(status().isConflict());
     }
 
     @Test
-    void senhaErradaRetorna401() throws Exception {
-        registrarApp("carla@exemplo.com", "52998224725", "CUIDADOR").andExpect(status().isCreated());
+    void wrongPasswordReturns401() throws Exception {
+        registerApp("carla@exemplo.com", "52998224725", "CAREGIVER").andExpect(status().isCreated());
         login("carla@exemplo.com", "outraSenha1").andExpect(status().isUnauthorized());
-        login("naoexiste@exemplo.com", SENHA).andExpect(status().isUnauthorized());
+        login("naoexiste@exemplo.com", PASSWORD).andExpect(status().isUnauthorized());
     }
 
     @Test
-    void refreshRotacionaTokenEReusoEncerraSessao() throws Exception {
-        registrarApp("bia@exemplo.com", "52998224725", "CUIDADOR").andExpect(status().isCreated());
-        String body = login("bia@exemplo.com", SENHA).andReturn().getResponse().getContentAsString();
+    void refreshRotatesTokenAndReuseEndsSession() throws Exception {
+        registerApp("bia@exemplo.com", "52998224725", "CAREGIVER").andExpect(status().isCreated());
+        String body = login("bia@exemplo.com", PASSWORD).andReturn().getResponse().getContentAsString();
         String refresh1 = JsonPath.read(body, "$.refreshToken");
 
-        String renovado = refresh(refresh1)
+        String renewed = refresh(refresh1)
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.role").value("CUIDADOR"))
+                .andExpect(jsonPath("$.role").value("CAREGIVER"))
                 .andReturn().getResponse().getContentAsString();
-        String refresh2 = JsonPath.read(renovado, "$.refreshToken");
+        String refresh2 = JsonPath.read(renewed, "$.refreshToken");
         assertThat(refresh2).isNotEqualTo(refresh1);
 
         refresh(refresh1).andExpect(status().isUnauthorized());
@@ -118,33 +118,33 @@ class AuthControllerTest {
     }
 
     @Test
-    void cincoFalhasConsecutivasBloqueiamOLoginMesmoComSenhaCorreta() throws Exception {
-        registrarApp("dani@exemplo.com", "52998224725", "CUIDADOR").andExpect(status().isCreated());
+    void fiveConsecutiveFailuresLockLoginEvenWithCorrectPassword() throws Exception {
+        registerApp("dani@exemplo.com", "52998224725", "CAREGIVER").andExpect(status().isCreated());
         for (int i = 0; i < 5; i++) {
             login("dani@exemplo.com", "errada123").andExpect(status().isUnauthorized());
         }
-        login("dani@exemplo.com", SENHA)
+        login("dani@exemplo.com", PASSWORD)
                 .andExpect(status().isTooManyRequests())
                 .andExpect(header().exists("Retry-After"));
     }
 
     @Test
-    void loginComSucessoZeraContagemDeFalhas() throws Exception {
-        registrarApp("edu@exemplo.com", "52998224725", "CUIDADOR").andExpect(status().isCreated());
+    void successfulLoginResetsFailureCount() throws Exception {
+        registerApp("edu@exemplo.com", "52998224725", "CAREGIVER").andExpect(status().isCreated());
         for (int i = 0; i < 4; i++) {
             login("edu@exemplo.com", "errada123").andExpect(status().isUnauthorized());
         }
-        login("edu@exemplo.com", SENHA).andExpect(status().isOk());
+        login("edu@exemplo.com", PASSWORD).andExpect(status().isOk());
         for (int i = 0; i < 4; i++) {
             login("edu@exemplo.com", "errada123").andExpect(status().isUnauthorized());
         }
-        login("edu@exemplo.com", SENHA).andExpect(status().isOk());
+        login("edu@exemplo.com", PASSWORD).andExpect(status().isOk());
     }
 
     @Test
-    void logoutRevogaORefreshToken() throws Exception {
-        registrarApp("fabi@exemplo.com", "52998224725", "CUIDADOR").andExpect(status().isCreated());
-        String body = login("fabi@exemplo.com", SENHA).andReturn().getResponse().getContentAsString();
+    void logoutRevokesRefreshToken() throws Exception {
+        registerApp("fabi@exemplo.com", "52998224725", "CAREGIVER").andExpect(status().isCreated());
+        String body = login("fabi@exemplo.com", PASSWORD).andReturn().getResponse().getContentAsString();
         String refresh = JsonPath.read(body, "$.refreshToken");
 
         mockMvc.perform(post("/api/auth/logout").contentType(MediaType.APPLICATION_JSON)
@@ -154,17 +154,17 @@ class AuthControllerTest {
         refresh(refresh).andExpect(status().isUnauthorized());
     }
 
-    private ResultActions registrarApp(String email, String cpf, String role) throws Exception {
+    private ResultActions registerApp(String email, String cpf, String role) throws Exception {
         return mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
-                {"nomeCompleto":"Pessoa Teste","cpf":"%s","dataNascimento":"1950-03-10",
-                 "telefone":"11999998888","email":"%s","senha":"%s","confirmacaoSenha":"%s",
-                 "role":"%s","versaoTermos":%d,"aceiteTermos":true,"aceiteDadosSaude":true}
-                """.formatted(cpf, email, SENHA, SENHA, role, versaoTermos)));
+                {"fullName":"Pessoa Teste","cpf":"%s","birthDate":"1950-03-10",
+                 "phone":"11999998888","email":"%s","password":"%s","passwordConfirmation":"%s",
+                 "role":"%s","termsVersion":%d,"acceptTerms":true,"acceptHealthData":true}
+                """.formatted(cpf, email, PASSWORD, PASSWORD, role, termsVersion)));
     }
 
-    private ResultActions login(String email, String senha) throws Exception {
+    private ResultActions login(String email, String password) throws Exception {
         return mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"%s\",\"senha\":\"%s\"}".formatted(email, senha)));
+                .content("{\"email\":\"%s\",\"password\":\"%s\"}".formatted(email, password)));
     }
 
     private ResultActions refresh(String refreshToken) throws Exception {

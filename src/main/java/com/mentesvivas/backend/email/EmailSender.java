@@ -2,5 +2,5 @@ package com.mentesvivas.backend.email;
 
 public interface EmailSender {
 
-    void enviar(String destinatario, String assunto, String corpoHtml);
+    void send(String recipient, String subject, String htmlBody);
 }

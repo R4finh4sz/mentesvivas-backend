@@ -1,11 +1,11 @@
 package com.mentesvivas.backend.exception.handler;
 
-import com.mentesvivas.backend.exception.auth.AutenticacaoException;
-import com.mentesvivas.backend.exception.auth.CodigoRecuperacaoInvalidoException;
-import com.mentesvivas.backend.exception.auth.ContaBloqueadaException;
-import com.mentesvivas.backend.exception.common.ServicoIndisponivelException;
-import com.mentesvivas.backend.exception.common.ConflitoException;
-import com.mentesvivas.backend.exception.common.RecursoNaoEncontradoException;
+import com.mentesvivas.backend.exception.auth.AuthException;
+import com.mentesvivas.backend.exception.auth.InvalidRecoveryCodeException;
+import com.mentesvivas.backend.exception.auth.AccountLockedException;
+import com.mentesvivas.backend.exception.common.ServiceUnavailableException;
+import com.mentesvivas.backend.exception.common.ConflictException;
+import com.mentesvivas.backend.exception.common.ResourceNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -24,62 +24,62 @@ import java.util.Map;
 public class ApiExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    ProblemDetail handleValidacao(MethodArgumentNotValidException ex) {
-        Map<String, String> erros = new LinkedHashMap<>();
+    ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new LinkedHashMap<>();
         ex.getBindingResult().getFieldErrors()
-                .forEach(erro -> erros.putIfAbsent(erro.getField(), erro.getDefaultMessage()));
+                .forEach(error -> errors.putIfAbsent(error.getField(), error.getDefaultMessage()));
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Dados invalidos");
-        problem.setProperty("erros", erros);
+        problem.setProperty("errors", errors);
         return problem;
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    ProblemDetail handleCorpoIlegivel(HttpMessageNotReadableException ex) {
+    ProblemDetail handleUnreadableBody(HttpMessageNotReadableException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Corpo da requisicao ausente ou mal formatado");
     }
 
-    @ExceptionHandler(ContaBloqueadaException.class)
-    ResponseEntity<ProblemDetail> handleContaBloqueada(ContaBloqueadaException ex) {
-        long segundos = Math.max(1, ex.getTempoRestante().toSeconds());
+    @ExceptionHandler(AccountLockedException.class)
+    ResponseEntity<ProblemDetail> handleAccountLocked(AccountLockedException ex) {
+        long seconds = Math.max(1, ex.getRemainingTime().toSeconds());
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
-        problem.setProperty("retryAfterSeconds", segundos);
+        problem.setProperty("retryAfterSeconds", seconds);
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                .header(HttpHeaders.RETRY_AFTER, Long.toString(segundos))
+                .header(HttpHeaders.RETRY_AFTER, Long.toString(seconds))
                 .body(problem);
     }
 
-    @ExceptionHandler(CodigoRecuperacaoInvalidoException.class)
-    ProblemDetail handleCodigoInvalido(CodigoRecuperacaoInvalidoException ex) {
+    @ExceptionHandler(InvalidRecoveryCodeException.class)
+    ProblemDetail handleInvalidCode(InvalidRecoveryCodeException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
-    @ExceptionHandler(ServicoIndisponivelException.class)
-    ProblemDetail handleServicoIndisponivel(ServicoIndisponivelException ex) {
+    @ExceptionHandler(ServiceUnavailableException.class)
+    ProblemDetail handleServiceUnavailable(ServiceUnavailableException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
     }
 
-    @ExceptionHandler(AutenticacaoException.class)
-    ProblemDetail handleAutenticacao(AutenticacaoException ex) {
+    @ExceptionHandler(AuthException.class)
+    ProblemDetail handleAuthentication(AuthException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    ProblemDetail handleAcessoNegado(AccessDeniedException ex) {
+    ProblemDetail handleAccessDenied(AccessDeniedException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
-    @ExceptionHandler(RecursoNaoEncontradoException.class)
-    ProblemDetail handleNaoEncontrado(RecursoNaoEncontradoException ex) {
+    @ExceptionHandler(ResourceNotFoundException.class)
+    ProblemDetail handleNotFound(ResourceNotFoundException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
-    @ExceptionHandler(ConflitoException.class)
-    ProblemDetail handleConflito(ConflitoException ex) {
+    @ExceptionHandler(ConflictException.class)
+    ProblemDetail handleConflict(ConflictException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    ProblemDetail handleIntegridade(DataIntegrityViolationException ex) {
+    ProblemDetail handleIntegrity(DataIntegrityViolationException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Ja existe um cadastro com estes dados");
     }
 }

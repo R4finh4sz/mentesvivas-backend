@@ -1,6 +1,6 @@
 package com.mentesvivas.backend.entity.auth;
 
-import com.mentesvivas.backend.entity.usuario.Usuario;
+import com.mentesvivas.backend.entity.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -28,26 +28,26 @@ public class RefreshToken {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "usuario_id", nullable = false)
-    private Usuario usuario;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(nullable = false, length = 64)
     private String tokenHash;
 
     @Column(nullable = false)
-    private Instant expiraEm;
+    private Instant expiresAt;
 
-    private Instant revogadoEm;
+    private Instant revokedAt;
 
     @Column(nullable = false)
-    private Instant criadoEm;
+    private Instant createdAt;
 
     @PrePersist
     void prePersist() {
-        criadoEm = Instant.now();
+        createdAt = Instant.now();
     }
 
-    public boolean isAtivo(Instant agora) {
-        return revogadoEm == null && expiraEm.isAfter(agora);
+    public boolean isActive(Instant now) {
+        return revokedAt == null && expiresAt.isAfter(now);
     }
 }

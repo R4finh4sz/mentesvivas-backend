@@ -1,14 +1,14 @@
 package com.mentesvivas.backend.dto.auth;
 
-import com.mentesvivas.backend.util.Normalizacao;
+import com.mentesvivas.backend.util.Normalization;
 import jakarta.validation.constraints.NotBlank;
 
 public record LoginRequest(
         @NotBlank String email,
-        @NotBlank String senha
+        @NotBlank String password
 ) {
 
     public LoginRequest {
-        email = Normalizacao.email(email);
+        email = Normalization.email(email);
     }
 }

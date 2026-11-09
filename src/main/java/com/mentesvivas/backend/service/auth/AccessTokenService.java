@@ -2,7 +2,7 @@ package com.mentesvivas.backend.service.auth;
 
 import com.mentesvivas.backend.config.JwtConfig;
 import com.mentesvivas.backend.config.JwtProperties;
-import com.mentesvivas.backend.entity.usuario.Usuario;
+import com.mentesvivas.backend.entity.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
@@ -20,15 +20,15 @@ public class AccessTokenService {
     private final JwtEncoder jwtEncoder;
     private final JwtProperties properties;
 
-    public String gerar(Usuario usuario) {
-        Instant agora = Instant.now();
+    public String generate(User user) {
+        Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(properties.issuer())
-                .issuedAt(agora)
-                .expiresAt(agora.plus(properties.accessTokenExpiration()))
-                .subject(usuario.getId().toString())
-                .claim("email", usuario.getEmail())
-                .claim(JwtConfig.ROLE_CLAIM, usuario.getRole().name())
+                .issuedAt(now)
+                .expiresAt(now.plus(properties.accessTokenExpiration()))
+                .subject(user.getId().toString())
+                .claim("email", user.getEmail())
+                .claim(JwtConfig.ROLE_CLAIM, user.getRole().name())
                 .build();
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
         return jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();

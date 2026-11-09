@@ -29,12 +29,12 @@ public class LoginController {
 
     @PostMapping("/refresh")
     public ResponseEntity<TokenResponse> refresh(@Valid @RequestBody RefreshRequest body) {
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(tokenService.renovar(body.refreshToken()));
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(tokenService.renew(body.refreshToken()));
     }
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@Valid @RequestBody RefreshRequest body) {
-        tokenService.encerrar(body.refreshToken());
+        tokenService.end(body.refreshToken());
         return ResponseEntity.noContent().build();
     }
 }

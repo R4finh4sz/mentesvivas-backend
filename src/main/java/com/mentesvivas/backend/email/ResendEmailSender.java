@@ -1,7 +1,7 @@
 package com.mentesvivas.backend.email;
 
 import com.mentesvivas.backend.config.EmailProperties;
-import com.mentesvivas.backend.exception.common.ServicoIndisponivelException;
+import com.mentesvivas.backend.exception.common.ServiceUnavailableException;
 import com.resend.Resend;
 import com.resend.core.exception.ResendException;
 import com.resend.services.emails.model.CreateEmailOptions;
@@ -13,25 +13,25 @@ import org.springframework.stereotype.Component;
 public class ResendEmailSender implements EmailSender {
 
     private final Resend resend;
-    private final String remetente;
+    private final String fromAddress;
 
     public ResendEmailSender(EmailProperties properties) {
         this.resend = new Resend(properties.apiKey());
-        this.remetente = properties.remetente();
+        this.fromAddress = properties.fromAddress();
     }
 
     @Override
-    public void enviar(String destinatario, String assunto, String corpoHtml) {
+    public void send(String recipient, String subject, String htmlBody) {
         CreateEmailOptions options = CreateEmailOptions.builder()
-                .from(remetente)
-                .to(destinatario)
-                .subject(assunto)
-                .html(corpoHtml)
+                .from(fromAddress)
+                .to(recipient)
+                .subject(subject)
+                .html(htmlBody)
                 .build();
         try {
             resend.emails().send(options);
         } catch (ResendException ex) {
-            throw new ServicoIndisponivelException("Nao foi possivel enviar o e-mail agora. Tente novamente em instantes.", ex);
+            throw new ServiceUnavailableException("Nao foi possivel enviar o e-mail agora. Tente novamente em instantes.", ex);
         }
     }
 }
