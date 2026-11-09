@@ -36,6 +36,12 @@ public class BloqueioLoginService {
         }
     }
 
+    public void liberar(String email) {
+        String chave = hasher.hash(email);
+        contador.remover(PREFIXO_FALHAS + chave);
+        valores.remover(PREFIXO_BLOQUEIO + chave);
+    }
+
     public void registrarSucesso(String email) {
         contador.remover(PREFIXO_FALHAS + hasher.hash(email));
     }

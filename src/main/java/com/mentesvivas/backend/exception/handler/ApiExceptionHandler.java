@@ -1,7 +1,9 @@
 package com.mentesvivas.backend.exception.handler;
 
 import com.mentesvivas.backend.exception.auth.AutenticacaoException;
+import com.mentesvivas.backend.exception.auth.CodigoRecuperacaoInvalidoException;
 import com.mentesvivas.backend.exception.auth.ContaBloqueadaException;
+import com.mentesvivas.backend.exception.common.ServicoIndisponivelException;
 import com.mentesvivas.backend.exception.common.ConflitoException;
 import com.mentesvivas.backend.exception.common.RecursoNaoEncontradoException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -44,6 +46,16 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header(HttpHeaders.RETRY_AFTER, Long.toString(segundos))
                 .body(problem);
+    }
+
+    @ExceptionHandler(CodigoRecuperacaoInvalidoException.class)
+    ProblemDetail handleCodigoInvalido(CodigoRecuperacaoInvalidoException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(ServicoIndisponivelException.class)
+    ProblemDetail handleServicoIndisponivel(ServicoIndisponivelException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
     }
 
     @ExceptionHandler(AutenticacaoException.class)
