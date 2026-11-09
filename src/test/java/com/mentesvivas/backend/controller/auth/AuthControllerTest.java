@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class AuthControllerTest {
 
-    private static final String PASSWORD = "senhaForte1";
+    private static final String PASSWORD = "SenhaForte1";
 
     @Autowired
     private MockMvc mockMvc;
@@ -152,6 +152,19 @@ class AuthControllerTest {
                 .andExpect(status().isNoContent());
 
         refresh(refresh).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void registrationRejectsPasswordsWithoutUppercaseLowercaseOrDigit() throws Exception {
+        for (String weak : new String[]{"senhaforte1", "SENHAFORTE1", "SenhaForte"}) {
+            mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
+                    {"fullName":"Pessoa Teste","cpf":"52998224725","birthDate":"1950-03-10",
+                     "phone":"11999998888","email":"fraca@exemplo.com","password":"%s","passwordConfirmation":"%s",
+                     "role":"CAREGIVER","termsVersion":%d,"acceptTerms":true,"acceptHealthData":true}
+                    """.formatted(weak, weak, termsVersion)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.errors.password").value("a senha deve ter ao menos uma letra maiuscula, uma minuscula e um numero"));
+        }
     }
 
     private ResultActions registerApp(String email, String cpf, String role) throws Exception {

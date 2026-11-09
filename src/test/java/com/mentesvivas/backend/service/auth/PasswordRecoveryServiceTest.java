@@ -91,9 +91,9 @@ class PasswordRecoveryServiceTest {
         User user = new User();
         user.setEmail(EMAIL);
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
-        when(passwordEncoder.encode("novaSenha99")).thenReturn("hash-novo");
+        when(passwordEncoder.encode("NovaSenha99")).thenReturn("hash-novo");
 
-        service.reset(new ResetPasswordRequest(EMAIL, "123456", "novaSenha99", "novaSenha99"));
+        service.reset(new ResetPasswordRequest(EMAIL, "123456", "NovaSenha99", "NovaSenha99"));
 
         assertThat(user.getPasswordHash()).isEqualTo("hash-novo");
         verify(codeService).validateAndConsume(policy, EMAIL, "123456");
@@ -106,7 +106,7 @@ class PasswordRecoveryServiceTest {
     void resetWithInvalidCodeChangesNothing() {
         doThrow(new InvalidCodeException()).when(codeService).validateAndConsume(any(), anyString(), anyString());
 
-        assertThatThrownBy(() -> service.reset(new ResetPasswordRequest(EMAIL, "123456", "novaSenha99", "novaSenha99")))
+        assertThatThrownBy(() -> service.reset(new ResetPasswordRequest(EMAIL, "123456", "NovaSenha99", "NovaSenha99")))
                 .isInstanceOf(InvalidCodeException.class);
 
         verifyNoInteractions(passwordEncoder, refreshTokenService, loginLockoutService, emails);

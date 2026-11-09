@@ -12,7 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Component
 public class AuthTestSupport {
 
-    public static final String PASSWORD = "senhaForte1";
+    public static final String PASSWORD = "SenhaForte1";
 
     private final ObjectProvider<MockMvc> mockMvcProvider;
     private final TermsTestSupport terms;
