@@ -1,9 +1,11 @@
 package com.mentesvivas.backend.controller.auth;
 
 import com.jayway.jsonpath.JsonPath;
+import com.mentesvivas.backend.support.LimparArmazenamentoTemporario;
 import com.mentesvivas.backend.support.TermosTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -16,10 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
+@ExtendWith(LimparArmazenamentoTemporario.class)
 @AutoConfigureMockMvc
 @Transactional
 class AuthControllerTest {
@@ -111,6 +115,43 @@ class AuthControllerTest {
 
         refresh(refresh1).andExpect(status().isUnauthorized());
         refresh(refresh2).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void cincoFalhasConsecutivasBloqueiamOLoginMesmoComSenhaCorreta() throws Exception {
+        registrarApp("dani@exemplo.com", "52998224725", "CUIDADOR").andExpect(status().isCreated());
+        for (int i = 0; i < 5; i++) {
+            login("dani@exemplo.com", "errada123").andExpect(status().isUnauthorized());
+        }
+        login("dani@exemplo.com", SENHA)
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().exists("Retry-After"));
+    }
+
+    @Test
+    void loginComSucessoZeraContagemDeFalhas() throws Exception {
+        registrarApp("edu@exemplo.com", "52998224725", "CUIDADOR").andExpect(status().isCreated());
+        for (int i = 0; i < 4; i++) {
+            login("edu@exemplo.com", "errada123").andExpect(status().isUnauthorized());
+        }
+        login("edu@exemplo.com", SENHA).andExpect(status().isOk());
+        for (int i = 0; i < 4; i++) {
+            login("edu@exemplo.com", "errada123").andExpect(status().isUnauthorized());
+        }
+        login("edu@exemplo.com", SENHA).andExpect(status().isOk());
+    }
+
+    @Test
+    void logoutRevogaORefreshToken() throws Exception {
+        registrarApp("fabi@exemplo.com", "52998224725", "CUIDADOR").andExpect(status().isCreated());
+        String body = login("fabi@exemplo.com", SENHA).andReturn().getResponse().getContentAsString();
+        String refresh = JsonPath.read(body, "$.refreshToken");
+
+        mockMvc.perform(post("/api/auth/logout").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"%s\"}".formatted(refresh)))
+                .andExpect(status().isNoContent());
+
+        refresh(refresh).andExpect(status().isUnauthorized());
     }
 
     private ResultActions registrarApp(String email, String cpf, String role) throws Exception {

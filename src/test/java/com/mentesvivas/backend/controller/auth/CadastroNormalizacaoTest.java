@@ -1,8 +1,10 @@
 package com.mentesvivas.backend.controller.auth;
 
+import com.mentesvivas.backend.support.LimparArmazenamentoTemporario;
 import com.mentesvivas.backend.support.TermosTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -16,6 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
+@ExtendWith(LimparArmazenamentoTemporario.class)
 @AutoConfigureMockMvc
 @Transactional
 class CadastroNormalizacaoTest {
