@@ -21,7 +21,7 @@ public class InMemoryTemporaryStorage implements TemporaryCounter, TemporaryValu
     private final Map<String, Entry> entries = new ConcurrentHashMap<>();
 
     @Override
-    public synchronized long incrementar(String key, Duration expiration) {
+    public synchronized long increment(String key, Duration expiration) {
         Entry current = liveEntry(key);
         long total = current == null ? 1L : Long.parseLong(current.value()) + 1;
         Instant expiresAt = current == null ? Instant.now().plus(expiration) : current.expiresAt();

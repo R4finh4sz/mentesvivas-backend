@@ -29,7 +29,7 @@ public class RecoveryCodeService {
 
     public Optional<String> generate(String email) {
         String key = hasher.hash(email);
-        long sends = counter.incrementar(SENDS_PREFIX + key, properties.sendsWindow());
+        long sends = counter.increment(SENDS_PREFIX + key, properties.sendsWindow());
         if (sends > properties.maxSends()) {
             return Optional.empty();
         }
@@ -41,7 +41,7 @@ public class RecoveryCodeService {
 
     public void validateAndConsume(String email, String code) {
         String key = hasher.hash(email);
-        long attempts = counter.incrementar(ATTEMPTS_PREFIX + key, properties.codeValidity());
+        long attempts = counter.increment(ATTEMPTS_PREFIX + key, properties.codeValidity());
         if (attempts > properties.maxAttempts()) {
             values.remove(CODE_PREFIX + key);
             throw new InvalidRecoveryCodeException();

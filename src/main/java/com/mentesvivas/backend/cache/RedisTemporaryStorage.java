@@ -14,7 +14,7 @@ public class RedisTemporaryStorage implements TemporaryCounter, TemporaryValue {
     private final StringRedisTemplate redis;
 
     @Override
-    public long incrementar(String key, Duration expiration) {
+    public long increment(String key, Duration expiration) {
         Long total = redis.opsForValue().increment(key);
         if (total != null && total == 1L) {
             redis.expire(key, expiration);
