@@ -4,6 +4,8 @@ import com.mentesvivas.backend.exception.auth.AuthException;
 import com.mentesvivas.backend.exception.auth.InvalidCodeException;
 import com.mentesvivas.backend.exception.auth.AccountLockedException;
 import com.mentesvivas.backend.exception.common.ServiceUnavailableException;
+import com.mentesvivas.backend.exception.patient.ImpossibleValueException;
+import com.mentesvivas.backend.exception.patient.ValueNeedsConfirmationException;
 import com.mentesvivas.backend.exception.common.ConflictException;
 import com.mentesvivas.backend.exception.common.ResourceNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -51,6 +53,18 @@ public class ApiExceptionHandler {
     @ExceptionHandler(InvalidCodeException.class)
     ProblemDetail handleInvalidCode(InvalidCodeException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(ImpossibleValueException.class)
+    ProblemDetail handleImpossibleValue(ImpossibleValueException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(ValueNeedsConfirmationException.class)
+    ProblemDetail handleValueNeedsConfirmation(ValueNeedsConfirmationException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setProperty("requiresConfirmation", true);
+        return problem;
     }
 
     @ExceptionHandler(ServiceUnavailableException.class)
