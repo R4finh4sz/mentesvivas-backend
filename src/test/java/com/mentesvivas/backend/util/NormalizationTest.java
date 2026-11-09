@@ -43,7 +43,13 @@ class NormalizationTest {
         assertThat(Normalization.cpf(null)).isNull();
         assertThat(Normalization.phone(null)).isNull();
         assertThat(Normalization.crm(null)).isNull();
+        assertThat(Normalization.cep(null)).isNull();
         assertThat(Normalization.state(null)).isNull();
         assertThat(Normalization.token(null)).isNull();
+    }
+
+    @Test
+    void cepKeepsOnlyTheDigitsOfAMaskedValue() {
+        assertThat(Normalization.cep(" 01.001-000 ")).isEqualTo("01001000");
     }
 }
