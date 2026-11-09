@@ -12,6 +12,12 @@ public class UserUniquenessValidator {
 
     private final UserRepository userRepository;
 
+    public void validateEmail(String email) {
+        if (userRepository.existsByEmail(email)) {
+            throw new EmailAlreadyRegisteredException();
+        }
+    }
+
     public void validate(String email, String cpf) {
         if (userRepository.existsByEmail(email)) {
             throw new EmailAlreadyRegisteredException();
