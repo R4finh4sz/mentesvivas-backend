@@ -55,6 +55,10 @@ public class MemoriaArmazenamentoTemporario implements ContadorTemporario, Valor
         entradas.remove(chave);
     }
 
+    public synchronized java.util.List<String> todosOsValores() {
+        return entradas.values().stream().map(Entrada::valor).toList();
+    }
+
     public synchronized void limpar() {
         entradas.clear();
     }
