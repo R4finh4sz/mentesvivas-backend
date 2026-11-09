@@ -1,6 +1,6 @@
 package com.mentesvivas.backend.controller.auth;
 
-import com.mentesvivas.backend.dto.auth.PasswordRecoveryRequestedResponse;
+import com.mentesvivas.backend.dto.auth.CodeRequestedResponse;
 import com.mentesvivas.backend.dto.auth.ResetPasswordRequest;
 import com.mentesvivas.backend.dto.auth.RequestPasswordRecoveryRequest;
 import com.mentesvivas.backend.service.auth.PasswordRecoveryService;
@@ -21,7 +21,7 @@ public class PasswordRecoveryController {
     private final PasswordRecoveryService passwordRecoveryService;
 
     @PostMapping("/forgot")
-    public ResponseEntity<PasswordRecoveryRequestedResponse> requestRecovery(@Valid @RequestBody RequestPasswordRecoveryRequest body) {
+    public ResponseEntity<CodeRequestedResponse> requestRecovery(@Valid @RequestBody RequestPasswordRecoveryRequest body) {
         return ResponseEntity.accepted().cacheControl(CacheControl.noStore())
                 .body(passwordRecoveryService.requestRecovery(body.email()));
     }

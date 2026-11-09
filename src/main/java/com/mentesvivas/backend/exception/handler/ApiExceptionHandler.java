@@ -1,7 +1,7 @@
 package com.mentesvivas.backend.exception.handler;
 
 import com.mentesvivas.backend.exception.auth.AuthException;
-import com.mentesvivas.backend.exception.auth.InvalidRecoveryCodeException;
+import com.mentesvivas.backend.exception.auth.InvalidCodeException;
 import com.mentesvivas.backend.exception.auth.AccountLockedException;
 import com.mentesvivas.backend.exception.common.ServiceUnavailableException;
 import com.mentesvivas.backend.exception.common.ConflictException;
@@ -48,8 +48,8 @@ public class ApiExceptionHandler {
                 .body(problem);
     }
 
-    @ExceptionHandler(InvalidRecoveryCodeException.class)
-    ProblemDetail handleInvalidCode(InvalidRecoveryCodeException ex) {
+    @ExceptionHandler(InvalidCodeException.class)
+    ProblemDetail handleInvalidCode(InvalidCodeException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
