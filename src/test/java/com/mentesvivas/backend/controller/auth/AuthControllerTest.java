@@ -77,8 +77,9 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.role").value("DOCTOR"));
 
         login("joao@clinica.com", PASSWORD)
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.role").value("DOCTOR"));
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.twoFactorRequired").value(true))
+                .andExpect(jsonPath("$.accessToken").doesNotExist());
     }
 
     @Test
