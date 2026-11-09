@@ -29,7 +29,7 @@ public class LoginLockoutService {
 
     public void recordFailure(String email) {
         String key = hasher.hash(email);
-        long failures = counter.incrementar(FAILURES_PREFIX + key, properties.attemptsWindow());
+        long failures = counter.increment(FAILURES_PREFIX + key, properties.attemptsWindow());
         if (failures >= properties.maxAttempts()) {
             values.store(LOCKOUT_PREFIX + key, "1", properties.lockoutDuration());
             counter.remove(FAILURES_PREFIX + key);

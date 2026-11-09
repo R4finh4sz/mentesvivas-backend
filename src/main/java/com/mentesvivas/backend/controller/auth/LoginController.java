@@ -1,8 +1,10 @@
 package com.mentesvivas.backend.controller.auth;
 
 import com.mentesvivas.backend.dto.auth.LoginRequest;
+import com.mentesvivas.backend.dto.auth.LoginResult;
 import com.mentesvivas.backend.dto.auth.RefreshRequest;
 import com.mentesvivas.backend.dto.auth.TokenResponse;
+import com.mentesvivas.backend.dto.auth.VerifyTwoFactorRequest;
 import com.mentesvivas.backend.service.auth.LoginService;
 import com.mentesvivas.backend.service.auth.TokenService;
 import jakarta.validation.Valid;
@@ -23,8 +25,17 @@ public class LoginController {
     private final TokenService tokenService;
 
     @PostMapping("/login")
-    public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest body) {
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(loginService.login(body));
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest body) {
+        LoginResult result = loginService.login(body);
+        if (result.requiresTwoFactor()) {
+            return ResponseEntity.accepted().cacheControl(CacheControl.noStore()).body(result.challenge());
+        }
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(result.tokens());
+    }
+
+    @PostMapping("/2fa/verify")
+    public ResponseEntity<TokenResponse> verifyTwoFactor(@Valid @RequestBody VerifyTwoFactorRequest body) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(loginService.verifyTwoFactor(body));
     }
 
     @PostMapping("/refresh")

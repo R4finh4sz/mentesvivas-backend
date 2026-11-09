@@ -24,6 +24,10 @@ public final class Normalization {
         return value == null ? null : value.replaceAll("[\\s().\\-]", "");
     }
 
+    public static String cep(String value) {
+        return value == null ? null : value.replaceAll("[\\s.\\-]", "");
+    }
+
     public static String crm(String value) {
         return value == null ? null : value.replaceAll("[\\s.\\-]", "");
     }

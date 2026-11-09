@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class TermsControllerTest {
 
-    private static final String PASSWORD = "senhaForte1";
+    private static final String PASSWORD = "SenhaForte1";
 
     @Autowired
     private MockMvc mockMvc;

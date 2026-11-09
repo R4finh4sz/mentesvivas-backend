@@ -23,6 +23,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**", "/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/terms").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/terms").hasRole(Role.ADMINISTRATOR.name())
+                        .requestMatchers("/api/patients/**").hasRole(Role.PATIENT.name())
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(roleConverter)))

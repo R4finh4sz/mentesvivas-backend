@@ -5,7 +5,7 @@ import java.util.Optional;
 
 public interface TemporaryCounter {
 
-    long incrementar(String key, Duration expiration);
+    long increment(String key, Duration expiration);
 
     long value(String key);
 

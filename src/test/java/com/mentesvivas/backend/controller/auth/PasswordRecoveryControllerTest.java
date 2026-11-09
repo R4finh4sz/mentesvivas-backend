@@ -26,8 +26,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class PasswordRecoveryControllerTest {
 
-    private static final String PASSWORD = "senhaForte1";
-    private static final String NEW_PASSWORD = "novaSenha99";
+    private static final String PASSWORD = "SenhaForte1";
+    private static final String NEW_PASSWORD = "NovaSenha99";
     private static final String EMAIL = "rita@exemplo.com";
 
     @Autowired
@@ -50,6 +50,7 @@ class PasswordRecoveryControllerTest {
                  "phone":"11999998888","email":"%s","password":"%s","passwordConfirmation":"%s",
                  "role":"CAREGIVER","termsVersion":%d,"acceptTerms":true,"acceptHealthData":true}
                 """.formatted(EMAIL, PASSWORD, PASSWORD, termsVersion))).andExpect(status().isCreated());
+        emails.clear();
     }
 
     @Test
@@ -86,7 +87,7 @@ class PasswordRecoveryControllerTest {
         String code = emails.lastCode();
 
         reset(EMAIL, code, NEW_PASSWORD, NEW_PASSWORD).andExpect(status().isNoContent());
-        reset(EMAIL, code, "outraSenha88", "outraSenha88").andExpect(status().isBadRequest());
+        reset(EMAIL, code, "OutraSenha88", "OutraSenha88").andExpect(status().isBadRequest());
     }
 
     @Test
@@ -133,6 +134,16 @@ class PasswordRecoveryControllerTest {
         reset(EMAIL, emails.lastCode(), NEW_PASSWORD, NEW_PASSWORD).andExpect(status().isNoContent());
 
         login(EMAIL, NEW_PASSWORD).andExpect(status().isOk());
+    }
+
+    @Test
+    void resetRejectsWeakNewPasswordAndKeepsTheCodeUsable() throws Exception {
+        requestRecovery(EMAIL);
+        String code = emails.lastCode();
+
+        reset(EMAIL, code, "senhafraca1", "senhafraca1").andExpect(status().isBadRequest());
+
+        reset(EMAIL, code, NEW_PASSWORD, NEW_PASSWORD).andExpect(status().isNoContent());
     }
 
     private ResultActions requestRecovery(String email) throws Exception {

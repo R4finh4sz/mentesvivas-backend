@@ -3,8 +3,10 @@ package com.mentesvivas.backend.service.auth;
 import com.mentesvivas.backend.config.PasswordRecoveryProperties;
 import com.mentesvivas.backend.dto.auth.ResetPasswordRequest;
 import com.mentesvivas.backend.entity.user.User;
-import com.mentesvivas.backend.exception.auth.InvalidRecoveryCodeException;
+import com.mentesvivas.backend.exception.auth.InvalidCodeException;
 import com.mentesvivas.backend.repository.user.UserRepository;
+import com.mentesvivas.backend.service.code.CodePolicy;
+import com.mentesvivas.backend.service.code.OneTimeCodeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,10 +32,12 @@ class PasswordRecoveryServiceTest {
 
     private static final String EMAIL = "ana@exemplo.com";
 
+    private final CodePolicy policy = new CodePolicy("recovery", Duration.ofMinutes(30), 5, 3, Duration.ofHours(1));
+
     @Mock
     private UserRepository userRepository;
     @Mock
-    private RecoveryCodeService codeService;
+    private OneTimeCodeService codeService;
     @Mock
     private PasswordRecoveryEmails emails;
     @Mock
@@ -48,7 +52,7 @@ class PasswordRecoveryServiceTest {
     @BeforeEach
     void setUp() {
         PasswordRecoveryProperties properties = new PasswordRecoveryProperties(Duration.ofMinutes(30), 5, 3, Duration.ofHours(1));
-        service = new PasswordRecoveryService(userRepository, codeService, emails, passwordEncoder,
+        service = new PasswordRecoveryService(userRepository, codeService, policy, emails, passwordEncoder,
                 refreshTokenService, loginLockoutService, properties);
     }
 
@@ -65,7 +69,7 @@ class PasswordRecoveryServiceTest {
     @Test
     void requestForRegisteredEmailSendsCode() {
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(new User()));
-        when(codeService.generate(EMAIL)).thenReturn(Optional.of("123456"));
+        when(codeService.generate(policy, EMAIL)).thenReturn(Optional.of("123456"));
 
         service.requestRecovery(EMAIL);
 
@@ -75,7 +79,7 @@ class PasswordRecoveryServiceTest {
     @Test
     void requestAboveSendLimitDoesNotSendEmail() {
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(new User()));
-        when(codeService.generate(EMAIL)).thenReturn(Optional.empty());
+        when(codeService.generate(policy, EMAIL)).thenReturn(Optional.empty());
 
         service.requestRecovery(EMAIL);
 
@@ -87,12 +91,12 @@ class PasswordRecoveryServiceTest {
         User user = new User();
         user.setEmail(EMAIL);
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
-        when(passwordEncoder.encode("novaSenha99")).thenReturn("hash-novo");
+        when(passwordEncoder.encode("NovaSenha99")).thenReturn("hash-novo");
 
-        service.reset(new ResetPasswordRequest(EMAIL, "123456", "novaSenha99", "novaSenha99"));
+        service.reset(new ResetPasswordRequest(EMAIL, "123456", "NovaSenha99", "NovaSenha99"));
 
         assertThat(user.getPasswordHash()).isEqualTo("hash-novo");
-        verify(codeService).validateAndConsume(EMAIL, "123456");
+        verify(codeService).validateAndConsume(policy, EMAIL, "123456");
         verify(refreshTokenService).revokeAll(user);
         verify(loginLockoutService).release(EMAIL);
         verify(emails).notifyPasswordChanged(EMAIL);
@@ -100,10 +104,10 @@ class PasswordRecoveryServiceTest {
 
     @Test
     void resetWithInvalidCodeChangesNothing() {
-        doThrow(new InvalidRecoveryCodeException()).when(codeService).validateAndConsume(anyString(), anyString());
+        doThrow(new InvalidCodeException()).when(codeService).validateAndConsume(any(), anyString(), anyString());
 
-        assertThatThrownBy(() -> service.reset(new ResetPasswordRequest(EMAIL, "123456", "novaSenha99", "novaSenha99")))
-                .isInstanceOf(InvalidRecoveryCodeException.class);
+        assertThatThrownBy(() -> service.reset(new ResetPasswordRequest(EMAIL, "123456", "NovaSenha99", "NovaSenha99")))
+                .isInstanceOf(InvalidCodeException.class);
 
         verifyNoInteractions(passwordEncoder, refreshTokenService, loginLockoutService, emails);
         verify(userRepository, never()).findByEmail(any());

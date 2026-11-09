@@ -21,7 +21,9 @@ import java.util.Base64;
 
 @Configuration
 @EnableConfigurationProperties({JwtProperties.class, LoginLockoutProperties.class,
-        PasswordRecoveryProperties.class, EmailProperties.class})
+        PasswordRecoveryProperties.class, EmailProperties.class,
+        EmailConfirmationProperties.class, CepProperties.class,
+        TwoFactorProperties.class, MeasurementProperties.class})
 public class JwtConfig {
 
     public static final String ROLE_CLAIM = "role";
