@@ -22,7 +22,7 @@ import java.util.Base64;
 @Configuration
 @EnableConfigurationProperties({JwtProperties.class, LoginLockoutProperties.class,
         PasswordRecoveryProperties.class, EmailProperties.class,
-        EmailConfirmationProperties.class})
+        EmailConfirmationProperties.class, CepProperties.class})
 public class JwtConfig {
 
     public static final String ROLE_CLAIM = "role";

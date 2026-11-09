@@ -1,5 +1,6 @@
 package com.mentesvivas.backend.dto.user;
 
+import com.mentesvivas.backend.util.BrazilianState;
 import com.mentesvivas.backend.util.Normalization;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
@@ -20,7 +21,7 @@ public record DoctorRegistrationRequest(
         @NotBlank String passwordConfirmation,
         @NotBlank @Pattern(regexp = "^\\d{1,10}$", message = "CRM deve conter apenas digitos") String crm,
         @NotBlank @Pattern(
-                regexp = "^(AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)$",
+                regexp = BrazilianState.REGEX,
                 message = "UF invalida") String crmState,
         @NotNull Integer termsVersion,
         @AssertTrue(message = "e necessario aceitar os Termos de Uso e a Politica de Privacidade") boolean acceptTerms
