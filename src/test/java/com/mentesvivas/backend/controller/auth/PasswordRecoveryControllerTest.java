@@ -50,6 +50,7 @@ class PasswordRecoveryControllerTest {
                  "phone":"11999998888","email":"%s","password":"%s","passwordConfirmation":"%s",
                  "role":"CAREGIVER","termsVersion":%d,"acceptTerms":true,"acceptHealthData":true}
                 """.formatted(EMAIL, PASSWORD, PASSWORD, termsVersion))).andExpect(status().isCreated());
+        emails.clear();
     }
 
     @Test
