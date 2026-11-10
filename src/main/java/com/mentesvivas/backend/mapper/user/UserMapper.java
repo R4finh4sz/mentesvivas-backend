@@ -17,6 +17,6 @@ public final class UserMapper {
     public static ProfileResponse toProfile(User user) {
         return new ProfileResponse(user.getId(), user.getFullName(), user.getCpf(), user.getBirthDate(),
                 user.getPhone(), user.getEmail(), user.isEmailConfirmed(), user.getRole(),
-                user.getCrm(), user.getCrmState(), user.isCrmVerified());
+                user.getCrm(), user.getCrmState(), user.isCrmVerified(), user.getPhotoUrl());
     }
 }

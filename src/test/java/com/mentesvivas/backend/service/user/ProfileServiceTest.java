@@ -58,6 +58,19 @@ class ProfileServiceTest {
     }
 
     @Test
+    void photoLinkIsSavedReplacedAndRemovedWithAnEmptyValue() {
+        service.update(new UpdateProfileRequest(null, null, null, null, "https://fotos.exemplo.com/mara.jpg"));
+        assertThat(user.getPhotoUrl()).isEqualTo("https://fotos.exemplo.com/mara.jpg");
+
+        service.update(new UpdateProfileRequest(null, null, null, null, null));
+        assertThat(user.getPhotoUrl()).isEqualTo("https://fotos.exemplo.com/mara.jpg");
+
+        var response = service.update(new UpdateProfileRequest(null, null, null, null, ""));
+        assertThat(user.getPhotoUrl()).isNull();
+        assertThat(response.photoUrl()).isNull();
+    }
+
+    @Test
     void informedFieldsAreApplied() {
         var response = service.update(new UpdateProfileRequest("Mara Souza", LocalDate.of(1951, 1, 2), "11977776666", null));
 

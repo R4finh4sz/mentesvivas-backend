@@ -7,16 +7,19 @@ import com.mentesvivas.backend.entity.patient.ChangeType;
 import com.mentesvivas.backend.entity.patient.PatientProfile;
 import com.mentesvivas.backend.entity.patient.SensitiveField;
 import com.mentesvivas.backend.entity.user.User;
+import com.mentesvivas.backend.exception.common.ConflictException;
 import com.mentesvivas.backend.mapper.patient.PatientMapper;
 import com.mentesvivas.backend.repository.patient.AllergyRepository;
 import com.mentesvivas.backend.repository.patient.BodyMeasurementRepository;
 import com.mentesvivas.backend.repository.patient.EmergencyContactRepository;
 import com.mentesvivas.backend.repository.patient.SensitiveDataChangeRepository;
 import com.mentesvivas.backend.security.CurrentPatient;
+import com.mentesvivas.backend.util.BodyMassIndex;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 
@@ -48,6 +51,9 @@ public class PatientProfileService {
             profile.setBloodType(request.bloodType());
         }
         if (request.declaredDisease() != null && !Objects.equals(request.declaredDisease(), profile.getDeclaredDisease())) {
+            if (profile.getDeclaredDisease() != null) {
+                throw new ConflictException("Somente o medico pode alterar a doenca ja registrada.");
+            }
             profile.setDeclaredDisease(request.declaredDisease());
             profile.setDeclaredDiseaseValidated(false);
             changeRecorder.record(patient.getId(), SensitiveField.DECLARED_DISEASE, ChangeType.UPDATED,
@@ -66,6 +72,8 @@ public class PatientProfileService {
     private PatientProfileResponse toResponse(User patient, PatientProfile profile) {
         var weight = measurementRepository.findFirstByPatientIdAndWeightKgIsNotNullOrderByMeasuredAtDesc(patient.getId());
         var height = measurementRepository.findFirstByPatientIdAndHeightMIsNotNullOrderByMeasuredAtDesc(patient.getId());
+        BigDecimal weightKg = weight.map(m -> m.getWeightKg()).orElse(null);
+        BigDecimal heightM = height.map(m -> m.getHeightM()).orElse(null);
         return new PatientProfileResponse(
                 profile.getBloodType(),
                 profile.getDeclaredDisease(),
@@ -73,8 +81,9 @@ public class PatientProfileService {
                 profile.getAllergyStatus(),
                 allergyRepository.findByPatientIdOrderByCreatedAtAsc(patient.getId()).stream()
                         .map(PatientMapper::toResponse).toList(),
-                weight.map(m -> m.getWeightKg()).orElse(null),
-                height.map(m -> m.getHeightM()).orElse(null),
+                weightKg,
+                heightM,
+                BodyMassIndex.calculate(weightKg, heightM),
                 contactRepository.findByPatientIdOrderByContactOrderAsc(patient.getId()).stream()
                         .map(PatientMapper::toResponse).toList(),
                 completenessService.evaluate(patient.getId(), profile.getAllergyStatus()));

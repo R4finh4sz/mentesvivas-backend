@@ -11,7 +11,8 @@ public final class TermsMapper {
     }
 
     public static TermsResponse toResponse(TermsVersion terms) {
-        return new TermsResponse(terms.getVersion(), terms.getTitle(), terms.getContent(), terms.getPublishedAt());
+        return new TermsResponse(terms.getVersion(), terms.getType(), terms.getAudience(), terms.getAudienceRoles(),
+                terms.getTitle(), terms.getContent(), terms.getPublishedAt());
     }
 
     public static TermsAcceptanceResponse toResponse(TermsAcceptance acceptance) {

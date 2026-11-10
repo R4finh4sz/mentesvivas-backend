@@ -21,8 +21,10 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/actuator/health").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/terms").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/terms", "/api/terms/signup").permitAll()
+                        .requestMatchers("/api/doctors/**").hasRole(Role.DOCTOR.name())
                         .requestMatchers(HttpMethod.POST, "/api/terms").hasRole(Role.ADMINISTRATOR.name())
+                        .requestMatchers("/api/admin/**").hasRole(Role.ADMINISTRATOR.name())
                         .requestMatchers("/api/patients/**").hasRole(Role.PATIENT.name())
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2

@@ -63,6 +63,16 @@ public class User {
 
     private Instant healthDataConsentedAt;
 
+    @Column(length = 500)
+    private String photoUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private MfaMethod mfaMethod = MfaMethod.EMAIL;
+
+    @Column(length = 200)
+    private String totpSecret;
+
     @Column(nullable = false)
     private Instant createdAt;
 

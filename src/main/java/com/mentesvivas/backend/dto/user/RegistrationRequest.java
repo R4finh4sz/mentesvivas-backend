@@ -26,10 +26,14 @@ public record RegistrationRequest(
         @NotNull Role role,
         @NotNull Integer termsVersion,
         @AssertTrue(message = "e necessario aceitar os Termos de Uso e a Politica de Privacidade") boolean acceptTerms,
-        @AssertTrue(message = "e necessario consentir com o tratamento de dados de saude") boolean acceptHealthData
+        @AssertTrue(message = "e necessario consentir com o tratamento de dados de saude") boolean acceptHealthData,
+        Integer privacyPolicyVersion,
+        Integer specificConsentVersion,
+        @Size(max = 500) @Pattern(regexp = PhotoUrl.REGEX, message = PhotoUrl.MESSAGE) String photoUrl
 ) {
 
     public RegistrationRequest {
+        photoUrl = PhotoUrl.normalize(photoUrl);
         fullName = Normalization.name(fullName);
         cpf = Normalization.cpf(cpf);
         phone = Normalization.phone(phone);
