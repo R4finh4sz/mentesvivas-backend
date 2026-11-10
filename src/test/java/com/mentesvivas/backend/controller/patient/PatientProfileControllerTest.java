@@ -110,7 +110,15 @@ class PatientProfileControllerTest {
                 .andExpect(jsonPath("$.weightKg").value(72.5))
                 .andExpect(jsonPath("$.heightM").value(1.68));
 
-        profile().andExpect(jsonPath("$.weightKg").value(72.5)).andExpect(jsonPath("$.heightM").value(1.68));
+        profile().andExpect(jsonPath("$.weightKg").value(72.5)).andExpect(jsonPath("$.heightM").value(1.68))
+                .andExpect(jsonPath("$.bmi").value(25.7));
+    }
+
+    @Test
+    void bmiIsEmptyUntilWeightAndHeightAreRecorded() throws Exception {
+        send(post(BASE + "/measurements"), "{\"weightKg\":70}").andExpect(status().isCreated());
+
+        profile().andExpect(jsonPath("$.bmi").isEmpty());
     }
 
     @Test
