@@ -16,6 +16,7 @@ public record ProfileResponse(
         Role role,
         String crm,
         String crmState,
-        boolean crmVerified
+        boolean crmVerified,
+        String photoUrl
 ) {
 }

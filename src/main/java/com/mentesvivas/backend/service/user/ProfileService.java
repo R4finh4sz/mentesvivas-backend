@@ -36,7 +36,10 @@ public class ProfileService {
         if (request.phone() != null) {
             user.setPhone(request.phone());
         }
-        boolean emailChanged = changeEmail(user, request.email());
+        if (request.photoUrl() != null) {
+            user.setPhotoUrl(request.photoUrl().isEmpty() ? null : request.photoUrl());
+        }
+        boolean emailChanged =changeEmail(user, request.email());
 
         if (emailChanged) {
             emailConfirmationService.sendCodeKeepingFlow(user);
