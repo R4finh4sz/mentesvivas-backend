@@ -7,6 +7,7 @@ import com.mentesvivas.backend.exception.common.ServiceUnavailableException;
 import com.mentesvivas.backend.repository.user.UserRepository;
 import com.mentesvivas.backend.service.code.CodePolicy;
 import com.mentesvivas.backend.service.code.OneTimeCodeService;
+import com.mentesvivas.backend.service.link.PendingInvitationAttacher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,13 +38,15 @@ class EmailConfirmationServiceTest {
     private OneTimeCodeService codeService;
     @Mock
     private EmailConfirmationEmails emails;
+    @Mock
+    private PendingInvitationAttacher invitationAttacher;
 
     private EmailConfirmationService service;
 
     @BeforeEach
     void setUp() {
         EmailConfirmationProperties properties = new EmailConfirmationProperties(Duration.ofMinutes(30), 5, 3, Duration.ofHours(1));
-        service = new EmailConfirmationService(userRepository, codeService, policy, emails, properties);
+        service = new EmailConfirmationService(userRepository, codeService, policy, emails, properties, invitationAttacher);
     }
 
     private User unconfirmedUser() {
