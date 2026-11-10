@@ -3,5 +3,10 @@ package com.mentesvivas.backend.entity.link;
 public enum LinkStatus {
     PENDING,
     ACTIVE,
-    ENDED
+    DECLINED,
+    ENDED;
+
+    public boolean isOpen() {
+        return this == PENDING || this == ACTIVE;
+    }
 }
