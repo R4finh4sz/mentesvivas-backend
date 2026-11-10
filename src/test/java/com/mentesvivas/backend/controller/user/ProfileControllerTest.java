@@ -37,6 +37,9 @@ class ProfileControllerTest {
     @Autowired
     private CapturedEmailSender emails;
 
+    @Autowired
+    private com.mentesvivas.backend.support.TermsTestSupport terms;
+
     private String token;
 
     @BeforeEach
@@ -117,6 +120,38 @@ class ProfileControllerTest {
                 .andExpect(jsonPath("$.emailConfirmed").value(true));
 
         assertThat(emails.sentEmails()).isEmpty();
+    }
+
+    @Test
+    void photoIsStoredAsALinkAndCanBeRemoved() throws Exception {
+        update("{\"photoUrl\":\"https://fotos.exemplo.com/mara.jpg\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.photoUrl").value("https://fotos.exemplo.com/mara.jpg"));
+        update("{\"fullName\":\"Mara\"}").andExpect(jsonPath("$.photoUrl").value("https://fotos.exemplo.com/mara.jpg"));
+
+        update("{\"photoUrl\":\"\"}").andExpect(status().isOk()).andExpect(jsonPath("$.photoUrl").doesNotExist());
+    }
+
+    @Test
+    void photoMustBeAnHttpsLink() throws Exception {
+        update("{\"photoUrl\":\"http://fotos.exemplo.com/mara.jpg\"}").andExpect(status().isBadRequest());
+        update("{\"photoUrl\":\"javascript:alert(1)\"}").andExpect(status().isBadRequest());
+        update("{\"photoUrl\":\"https://com espaco.com/a.jpg\"}").andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void registrationAcceptsAPhotoLink() throws Exception {
+        int version = terms.publish();
+        mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
+                {"fullName":"Pessoa Teste","cpf":"11144477735","birthDate":"1950-03-10",
+                 "phone":"11999998888","email":"foto@exemplo.com","password":"%s","passwordConfirmation":"%s",
+                 "role":"CAREGIVER","termsVersion":%d,"acceptTerms":true,"acceptHealthData":true,
+                 "photoUrl":"https://fotos.exemplo.com/p.jpg"}
+                """.formatted(AuthTestSupport.PASSWORD, AuthTestSupport.PASSWORD, version))).andExpect(status().isCreated());
+
+        String other = auth.login("foto@exemplo.com");
+        mockMvc.perform(get("/api/users/me").header("Authorization", bearer(other)))
+                .andExpect(jsonPath("$.photoUrl").value("https://fotos.exemplo.com/p.jpg"));
     }
 
     private void confirmCurrentEmail() throws Exception {
