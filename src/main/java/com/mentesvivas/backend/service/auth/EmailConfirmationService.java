@@ -8,6 +8,7 @@ import com.mentesvivas.backend.exception.common.ServiceUnavailableException;
 import com.mentesvivas.backend.repository.user.UserRepository;
 import com.mentesvivas.backend.service.code.CodePolicy;
 import com.mentesvivas.backend.service.code.OneTimeCodeService;
+import com.mentesvivas.backend.service.link.PendingInvitationAttacher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class EmailConfirmationService {
     private final CodePolicy emailConfirmationPolicy;
     private final EmailConfirmationEmails emails;
     private final EmailConfirmationProperties properties;
+    private final PendingInvitationAttacher invitationAttacher;
 
     public void sendCode(User user) {
         if (user.isEmailConfirmed()) {
@@ -53,5 +55,6 @@ public class EmailConfirmationService {
         codeService.validateAndConsume(emailConfirmationPolicy, email, code);
         User user = userRepository.findByEmail(email).orElseThrow(InvalidCodeException::new);
         user.setEmailConfirmed(true);
+        invitationAttacher.attach(user);
     }
 }
