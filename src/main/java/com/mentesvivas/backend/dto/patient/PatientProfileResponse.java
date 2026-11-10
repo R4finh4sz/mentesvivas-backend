@@ -14,6 +14,7 @@ public record PatientProfileResponse(
         List<AllergyResponse> allergies,
         BigDecimal weightKg,
         BigDecimal heightM,
+        BigDecimal bmi,
         List<EmergencyContactResponse> emergencyContacts,
         CompletenessResponse completeness
 ) {
