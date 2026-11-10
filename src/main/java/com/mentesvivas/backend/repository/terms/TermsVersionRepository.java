@@ -1,5 +1,6 @@
 package com.mentesvivas.backend.repository.terms;
 
+import com.mentesvivas.backend.entity.terms.TermsType;
 import com.mentesvivas.backend.entity.terms.TermsVersion;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -11,4 +12,8 @@ public interface TermsVersionRepository extends JpaRepository<TermsVersion, Inte
     Optional<TermsVersion> findTopByOrderByVersionDesc();
 
     List<TermsVersion> findAllByOrderByVersionAsc();
+
+    List<TermsVersion> findByTypeOrderByVersionDesc(TermsType type);
+
+    boolean existsByType(TermsType type);
 }

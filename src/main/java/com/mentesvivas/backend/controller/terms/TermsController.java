@@ -1,9 +1,11 @@
 package com.mentesvivas.backend.controller.terms;
 
 import com.mentesvivas.backend.dto.terms.AcceptTermsRequest;
-import com.mentesvivas.backend.dto.terms.TermsAcceptanceResponse;
 import com.mentesvivas.backend.dto.terms.PublishTermsRequest;
+import com.mentesvivas.backend.dto.terms.TermsAcceptanceResponse;
 import com.mentesvivas.backend.dto.terms.TermsResponse;
+import com.mentesvivas.backend.entity.terms.TermsType;
+import com.mentesvivas.backend.entity.user.Role;
 import com.mentesvivas.backend.service.terms.TermsAcceptanceService;
 import com.mentesvivas.backend.service.terms.TermsService;
 import jakarta.validation.Valid;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,8 +30,14 @@ public class TermsController {
     private final TermsAcceptanceService termsAcceptanceService;
 
     @GetMapping
-    public TermsResponse current() {
-        return termsService.current();
+    public TermsResponse current(@RequestParam(required = false) TermsType type,
+                                 @RequestParam(required = false) Role role) {
+        return termsService.current(type, role);
+    }
+
+    @GetMapping("/signup")
+    public List<TermsResponse> forSignup(@RequestParam Role role) {
+        return termsService.currentForSignup(role);
     }
 
     @GetMapping("/history")
