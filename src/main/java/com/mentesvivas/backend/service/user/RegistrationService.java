@@ -8,7 +8,9 @@ import com.mentesvivas.backend.entity.user.Role;
 import com.mentesvivas.backend.entity.user.User;
 import com.mentesvivas.backend.mapper.user.UserMapper;
 import com.mentesvivas.backend.repository.user.UserRepository;
+import com.mentesvivas.backend.service.address.AddressService;
 import com.mentesvivas.backend.service.auth.EmailConfirmationService;
+import com.mentesvivas.backend.service.patient.EmergencyContactService;
 import com.mentesvivas.backend.service.terms.TermsAcceptanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,6 +31,8 @@ public class RegistrationService {
     private final PasswordEncoder passwordEncoder;
     private final TermsAcceptanceService termsAcceptanceService;
     private final EmailConfirmationService emailConfirmationService;
+    private final AddressService addressService;
+    private final EmergencyContactService emergencyContactService;
 
     @Transactional
     public UserResponse register(RegistrationRequest request) {
@@ -39,7 +43,12 @@ public class RegistrationService {
         user.setBirthDate(request.birthDate());
         user.setHealthDataConsentedAt(Instant.now());
         user.setPhotoUrl(emptyToNull(request.photoUrl()));
-        return saveWithAcceptance(user, versions);
+        UserResponse response = saveWithAcceptance(user, versions);
+        addressService.saveFor(user, request.address());
+        if (request.role() == Role.PATIENT) {
+            emergencyContactService.replaceFor(user, request.emergencyContacts());
+        }
+        return response;
     }
 
     @Transactional
