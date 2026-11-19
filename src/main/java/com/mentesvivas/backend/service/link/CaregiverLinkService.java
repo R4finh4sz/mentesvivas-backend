@@ -41,6 +41,7 @@ public class CaregiverLinkService {
     private final NotificationService notifications;
     private final LinkEmails emails;
     private final AuditTrail auditTrail;
+    private final CaregiverPatientAccess caregiverAccess;
 
     @Transactional
     public void invite(String email) {
@@ -68,10 +69,11 @@ public class CaregiverLinkService {
 
     @Transactional
     public CaregiverLinkResponse accept(UUID linkId) {
-        User patient = roles.require(Role.PATIENT);
-        CaregiverPatientLink link = pendingLinkOf(linkId, patient);
+        User caller = currentUser.get();
+        CaregiverPatientLink link = pendingLinkOf(linkId, caller);
+        User patient = userRepository.findById(link.getPatientId()).orElseThrow();
         link.setStatus(LinkStatus.ACTIVE);
-        audit(AuditEventType.CAREGIVER_LINK_ACCEPTED, patient.getId(), link.getPatientId());
+        audit(AuditEventType.CAREGIVER_LINK_ACCEPTED, caller, link);
         notifications.notify(link.getCaregiverId(), NotificationType.LINK_ACCEPTED, link.getId(),
                 "%s aceitou seu convite de cuidador.".formatted(patient.getFullName()));
         return toResponse(link);
@@ -79,10 +81,11 @@ public class CaregiverLinkService {
 
     @Transactional
     public CaregiverLinkResponse decline(UUID linkId) {
-        User patient = roles.require(Role.PATIENT);
-        CaregiverPatientLink link = pendingLinkOf(linkId, patient);
+        User caller = currentUser.get();
+        CaregiverPatientLink link = pendingLinkOf(linkId, caller);
+        User patient = userRepository.findById(link.getPatientId()).orElseThrow();
         link.setStatus(LinkStatus.DECLINED);
-        audit(AuditEventType.CAREGIVER_LINK_DECLINED, patient.getId(), link.getPatientId());
+        audit(AuditEventType.CAREGIVER_LINK_DECLINED, caller, link);
         notifications.notify(link.getCaregiverId(), NotificationType.LINK_DECLINED, link.getId(),
                 "%s recusou seu convite de cuidador.".formatted(patient.getFullName()));
         return toResponse(link);
@@ -137,9 +140,21 @@ public class CaregiverLinkService {
         auditTrail.record(AuditRecord.of(type, actorId).forPatient(patientId));
     }
 
-    private CaregiverPatientLink pendingLinkOf(UUID linkId, User patient) {
+    private void audit(AuditEventType type, User caller, CaregiverPatientLink link) {
+        AuditRecord record = AuditRecord.of(type, caller.getId()).forPatient(link.getPatientId());
+        if (!caller.getId().equals(link.getPatientId())) {
+            record = record.onBehalfOf(link.getPatientId());
+        }
+        auditTrail.record(record);
+    }
+
+    private CaregiverPatientLink pendingLinkOf(UUID linkId, User caller) {
         CaregiverPatientLink link = find(linkId);
-        if (!link.getPatientId().equals(patient.getId())) {
+        boolean isPatient = link.getPatientId().equals(caller.getId());
+        boolean isRepresentative = caller.getRole() == Role.CAREGIVER
+                && !caller.getId().equals(link.getCaregiverId())
+                && caregiverAccess.isRepresentative(caller.getId(), link.getPatientId());
+        if (!isPatient && !isRepresentative) {
             throw new AccessDeniedException("Este convite nao e seu.");
         }
         if (link.getStatus() != LinkStatus.PENDING) {

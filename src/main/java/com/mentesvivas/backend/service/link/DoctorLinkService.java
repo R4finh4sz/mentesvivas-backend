@@ -47,6 +47,7 @@ public class DoctorLinkService {
     private final NotificationService notifications;
     private final LinkEmails emails;
     private final AuditTrail auditTrail;
+    private final CaregiverPatientAccess caregiverAccess;
 
     @Transactional
     public DoctorLinkResponse request(RequestDoctorLinkRequest request) {
@@ -101,7 +102,7 @@ public class DoctorLinkService {
     public DoctorLinkResponse accept(UUID linkId) {
         User caller = currentUser.get();
         DoctorPatientLink link = pendingLinkOf(linkId, caller);
-        audit(AuditEventType.DOCTOR_LINK_ACCEPTED, caller.getId(), link.getPatientId());
+        audit(AuditEventType.DOCTOR_LINK_ACCEPTED, caller, link);
         if (caller.getId().equals(link.getDoctorId())) {
             link.setDoctorConfirmed(true);
         } else {
@@ -120,7 +121,7 @@ public class DoctorLinkService {
         User caller = currentUser.get();
         DoctorPatientLink link = pendingLinkOf(linkId, caller);
         link.setStatus(LinkStatus.DECLINED);
-        audit(AuditEventType.DOCTOR_LINK_DECLINED, caller.getId(), link.getPatientId());
+        audit(AuditEventType.DOCTOR_LINK_DECLINED, caller, link);
         notifyOthers(link, caller, NotificationType.LINK_DECLINED,
                 "%s recusou o vinculo entre medico e paciente.".formatted(caller.getFullName()));
         return toResponse(link);
@@ -218,9 +219,25 @@ public class DoctorLinkService {
         return ids;
     }
 
+    private void audit(AuditEventType type, User caller, DoctorPatientLink link) {
+        AuditRecord record = AuditRecord.of(type, caller.getId()).forPatient(link.getPatientId());
+        if (isRepresentative(caller, link)) {
+            record = record.onBehalfOf(link.getPatientId());
+        }
+        auditTrail.record(record);
+    }
+
+    private boolean isRepresentative(User caller, DoctorPatientLink link) {
+        return !caller.getId().equals(link.getDoctorId()) && !caller.getId().equals(link.getPatientId())
+                && caller.getRole() == Role.CAREGIVER
+                && caregiverAccess.isRepresentative(caller.getId(), link.getPatientId());
+    }
+
     private DoctorPatientLink pendingLinkOf(UUID linkId, User caller) {
         DoctorPatientLink link = find(linkId);
-        requireParty(link, caller);
+        if (!isRepresentative(caller, link)) {
+            requireParty(link, caller);
+        }
         if (link.getStatus() != LinkStatus.PENDING) {
             throw new ConflictException("Este pedido nao esta mais pendente.");
         }
