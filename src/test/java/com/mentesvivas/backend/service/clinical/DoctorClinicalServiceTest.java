@@ -1,5 +1,6 @@
 package com.mentesvivas.backend.service.clinical;
 
+import com.mentesvivas.backend.service.audit.AccessLog;
 import com.mentesvivas.backend.dto.clinical.DeclareDiseaseRequest;
 import com.mentesvivas.backend.dto.patient.AddAllergyRequest;
 import com.mentesvivas.backend.dto.patient.SetAllergyStatusRequest;
@@ -43,6 +44,8 @@ class DoctorClinicalServiceTest {
     private static final UUID ALLERGY = UUID.randomUUID();
 
     @Mock
+    private AccessLog accessLog;
+    @Mock
     private DoctorPatientAccess access;
     @Mock
     private AllergyRepository allergyRepository;
@@ -57,7 +60,7 @@ class DoctorClinicalServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new DoctorClinicalService(access, allergyRepository, profileLoader, changeRecorder);
+        service = new DoctorClinicalService(access, allergyRepository, profileLoader, changeRecorder, accessLog);
         doctor = new User();
         doctor.setId(UUID.randomUUID());
         profile = new PatientProfile(PATIENT);
