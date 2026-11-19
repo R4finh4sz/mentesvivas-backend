@@ -1,6 +1,5 @@
 package com.mentesvivas.backend.service.patient;
 
-import com.mentesvivas.backend.config.MeasurementProperties;
 import com.mentesvivas.backend.exception.patient.ImpossibleValueException;
 import com.mentesvivas.backend.exception.patient.ValueNeedsConfirmationException;
 import org.junit.jupiter.api.Test;
@@ -12,9 +11,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class MeasurementValidatorTest {
 
-    private final MeasurementValidator validator = new MeasurementValidator(new MeasurementProperties(
-            new MeasurementProperties.Limits(bd("30"), bd("300"), bd("10"), bd("500")),
-            new MeasurementProperties.Limits(bd("1.20"), bd("2.30"), bd("0.50"), bd("2.80"))));
+    private final MeasurementValidator validator = new MeasurementValidator();
 
     private static BigDecimal bd(String value) {
         return new BigDecimal(value);
