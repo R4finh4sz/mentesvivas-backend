@@ -48,7 +48,8 @@ public class AllergyService {
 
         profileLoader.getOrCreate(patient.getId()).setAllergyStatus(AllergyStatus.INFORMED);
         changeRecorder.record(patient.getId(), SensitiveField.ALLERGY, ChangeType.CREATED,
-                "Alergia adicionada: %s (%s)".formatted(request.category(), request.severity()), patient.getId());
+                "Alergia adicionada: %s (%s)".formatted(request.category(), request.severity()), patient.getId(),
+                null, describe(request.category(), request.description(), request.severity()));
         return PatientMapper.toResponse(saved);
     }
 
@@ -60,10 +61,16 @@ public class AllergyService {
         }
         PatientProfile profile = profileLoader.getOrCreate(patient.getId());
         if (profile.getAllergyStatus() != request.status()) {
+            AllergyStatus previous = profile.getAllergyStatus();
             profile.setAllergyStatus(request.status());
             changeRecorder.record(patient.getId(), SensitiveField.ALLERGY_STATUS, ChangeType.UPDATED,
-                    "Estado das alergias alterado para %s".formatted(request.status()), patient.getId());
+                    "Estado das alergias alterado para %s".formatted(request.status()), patient.getId(),
+                    String.valueOf(previous), String.valueOf(request.status()));
         }
         return profile.getAllergyStatus();
+    }
+
+    private String describe(Object category, String description, Object severity) {
+        return "%s | %s | %s".formatted(category, description, severity);
     }
 }

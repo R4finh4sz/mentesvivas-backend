@@ -55,10 +55,12 @@ public class PatientProfileService {
             if (profile.getDeclaredDisease() != null) {
                 throw new ConflictException("Somente o medico pode alterar a doenca ja registrada.");
             }
+            String before = profile.getDeclaredDisease();
             profile.setDeclaredDisease(request.declaredDisease());
             profile.setDeclaredDiseaseValidated(false);
             changeRecorder.record(patient.getId(), SensitiveField.DECLARED_DISEASE, ChangeType.UPDATED,
-                    "Doenca declarada alterada pelo paciente (nao validada)", patient.getId());
+                    "Doenca declarada alterada pelo paciente (nao validada)", patient.getId(),
+                    before, request.declaredDisease());
         }
         return toResponse(patient, profile);
     }
