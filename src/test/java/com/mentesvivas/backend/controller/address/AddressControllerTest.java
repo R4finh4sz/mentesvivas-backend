@@ -54,9 +54,11 @@ class AddressControllerTest {
     }
 
     @Test
-    void addressIsNotFoundBeforeBeingSaved() throws Exception {
+    void registrationAlreadySavesTheAddress() throws Exception {
         mockMvc.perform(get("/api/users/me/address").header("Authorization", bearer(token)))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cep").value("01001000"))
+                .andExpect(jsonPath("$.city").value("Sao Paulo"));
     }
 
     @Test

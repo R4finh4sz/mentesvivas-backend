@@ -145,7 +145,7 @@ class ProfileControllerTest {
         mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
                 {"fullName":"Pessoa Teste","cpf":"11144477735","birthDate":"1950-03-10",
                  "phone":"11999998888","email":"foto@exemplo.com","password":"%s","passwordConfirmation":"%s",
-                 "role":"CAREGIVER","termsVersion":%d,"acceptTerms":true,"acceptHealthData":true,
+                 "role":"CAREGIVER","termsVersion":%d,"acceptTerms":true,"acceptHealthData":true,"address":{"cep":"01001000","street":"Praca da Se","number":"1","city":"Sao Paulo","state":"SP"},
                  "photoUrl":"https://fotos.exemplo.com/p.jpg"}
                 """.formatted(AuthTestSupport.PASSWORD, AuthTestSupport.PASSWORD, version))).andExpect(status().isCreated());
 

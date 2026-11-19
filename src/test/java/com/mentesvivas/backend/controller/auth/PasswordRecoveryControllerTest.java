@@ -48,7 +48,7 @@ class PasswordRecoveryControllerTest {
         mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
                 {"fullName":"Rita Teste","cpf":"52998224725","birthDate":"1950-03-10",
                  "phone":"11999998888","email":"%s","password":"%s","passwordConfirmation":"%s",
-                 "role":"CAREGIVER","termsVersion":%d,"acceptTerms":true,"acceptHealthData":true}
+                 "role":"CAREGIVER","termsVersion":%d,"acceptTerms":true,"acceptHealthData":true,"address":{"cep":"01001000","street":"Praca da Se","number":"1","city":"Sao Paulo","state":"SP"}}
                 """.formatted(EMAIL, PASSWORD, PASSWORD, termsVersion))).andExpect(status().isCreated());
         emails.clear();
     }
