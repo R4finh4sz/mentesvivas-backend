@@ -104,4 +104,16 @@ class OneTimeCodeServiceTest {
                 .isInstanceOf(InvalidCodeException.class);
         assertThatCode(() -> service.validateAndConsume(POLICY, EMAIL, code)).doesNotThrowAnyException();
     }
+
+    @Test
+    void remainingSendBlockReportsTheTimeLeftInTheWindow() {
+        service.generate(POLICY, EMAIL);
+
+        assertThat(service.remainingSendBlock(POLICY, EMAIL)).isPositive().isLessThanOrEqualTo(Duration.ofHours(1));
+    }
+
+    @Test
+    void remainingSendBlockFallsBackToTheWholeWindowWhenNothingWasSent() {
+        assertThat(service.remainingSendBlock(POLICY, EMAIL)).isEqualTo(Duration.ofHours(1));
+    }
 }
