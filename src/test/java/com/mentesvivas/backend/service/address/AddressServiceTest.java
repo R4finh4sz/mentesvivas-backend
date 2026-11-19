@@ -73,6 +73,18 @@ class AddressServiceTest {
     }
 
     @Test
+    void saveForCreatesTheAddressForTheInformedUserWithoutUsingTheSession() {
+        when(addressRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
+        when(addressRepository.save(any(Address.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var response = service.saveFor(user, request());
+
+        assertThat(response.cep()).isEqualTo("01001000");
+        verify(addressRepository).save(org.mockito.ArgumentMatchers.argThat(saved -> saved.getUser() == user));
+        org.mockito.Mockito.verifyNoInteractions(currentUser);
+    }
+
+    @Test
     void saveUpdatesTheExistingAddress() {
         Address existing = new Address();
         existing.setUser(user);
