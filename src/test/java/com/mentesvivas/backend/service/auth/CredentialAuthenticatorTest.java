@@ -88,4 +88,22 @@ class CredentialAuthenticatorTest {
 
         verify(userRepository, never()).findByEmail(EMAIL);
     }
+
+    @Test
+    void inactiveAccountIsRejectedEvenWithTheCorrectPassword() {
+        user.setActive(false);
+        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> authenticator.authenticate(EMAIL, PASSWORD))
+                .isInstanceOf(com.mentesvivas.backend.exception.auth.AccountInactiveException.class);
+    }
+
+    @Test
+    void inactiveAccountWithAWrongPasswordIsStillTreatedAsInvalidCredentials() {
+        user.setActive(false);
+        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> authenticator.authenticate(EMAIL, "outraSenha1"))
+                .isInstanceOf(InvalidCredentialsException.class);
+    }
 }
