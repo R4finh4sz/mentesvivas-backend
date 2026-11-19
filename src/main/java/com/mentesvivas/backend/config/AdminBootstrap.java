@@ -59,7 +59,7 @@ public class AdminBootstrap implements CommandLineRunner {
         if (password == null || password.length() < PASSWORD_MIN_LENGTH
                 || password.getBytes(StandardCharsets.UTF_8).length > PASSWORD_MAX_BYTES) {
             throw new InvalidConfigurationException(
-                    "BOOTSTRAP_ADMIN_PASSWORD must have at least 12 characters");
+                    "BOOTSTRAP_ADMIN_PASSWORD deve ter pelo menos " + PASSWORD_MIN_LENGTH + " caracteres ");
         }
     }
 }
