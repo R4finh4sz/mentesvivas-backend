@@ -1,5 +1,6 @@
 package com.mentesvivas.backend.service.auth;
 
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.config.EmailConfirmationProperties;
 import com.mentesvivas.backend.entity.user.User;
 import com.mentesvivas.backend.exception.auth.InvalidCodeException;
@@ -33,6 +34,8 @@ class EmailConfirmationServiceTest {
     private final CodePolicy policy = new CodePolicy("email-confirmation", Duration.ofMinutes(30), 5, 3, Duration.ofHours(1));
 
     @Mock
+    private AuditTrail auditTrail;
+    @Mock
     private UserRepository userRepository;
     @Mock
     private OneTimeCodeService codeService;
@@ -46,7 +49,7 @@ class EmailConfirmationServiceTest {
     @BeforeEach
     void setUp() {
         EmailConfirmationProperties properties = new EmailConfirmationProperties(Duration.ofMinutes(30), 5, 3, Duration.ofHours(1));
-        service = new EmailConfirmationService(userRepository, codeService, policy, emails, properties, invitationAttacher);
+        service = new EmailConfirmationService(userRepository, codeService, policy, emails, properties, invitationAttacher, auditTrail);
     }
 
     private User unconfirmedUser() {

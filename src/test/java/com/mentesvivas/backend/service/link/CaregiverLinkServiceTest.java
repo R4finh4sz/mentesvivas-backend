@@ -1,5 +1,6 @@
 package com.mentesvivas.backend.service.link;
 
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.entity.link.CaregiverPatientLink;
 import com.mentesvivas.backend.entity.link.InvitationKind;
 import com.mentesvivas.backend.entity.link.LinkStatus;
@@ -38,6 +39,8 @@ import static org.mockito.Mockito.when;
 class CaregiverLinkServiceTest {
 
     @Mock
+    private AuditTrail auditTrail;
+    @Mock
     private CurrentUser currentUser;
     @Mock
     private UserRepository userRepository;
@@ -57,7 +60,7 @@ class CaregiverLinkServiceTest {
     @BeforeEach
     void setUp() {
         service = new CaregiverLinkService(currentUser, new RoleRequirement(currentUser), userRepository,
-                linkRepository, pendingRepository, notifications, emails);
+                linkRepository, pendingRepository, notifications, emails, auditTrail);
         caregiver = user(Role.CAREGIVER, "cuidador@exemplo.com");
         patient = user(Role.PATIENT, "paciente@exemplo.com");
         lenient().when(userRepository.findById(caregiver.getId())).thenReturn(Optional.of(caregiver));

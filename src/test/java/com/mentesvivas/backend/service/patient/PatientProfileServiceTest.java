@@ -110,7 +110,7 @@ class PatientProfileServiceTest {
         assertThat(response.declaredDiseaseValidated()).isFalse();
         assertThat(response.bloodType()).isEqualTo(BloodType.O_POSITIVE);
         verify(changeRecorder).record(eq(PATIENT_ID), eq(SensitiveField.DECLARED_DISEASE), eq(ChangeType.UPDATED),
-                anyString(), eq(PATIENT_ID));
+                anyString(), eq(PATIENT_ID), org.mockito.ArgumentMatchers.any(), eq("Alzheimer inicial"));
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.mentesvivas.backend.service.auth;
 
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.cache.TemporaryValue;
 import com.mentesvivas.backend.config.TwoFactorProperties;
 import com.mentesvivas.backend.dto.auth.TwoFactorChallengeResponse;
@@ -36,6 +37,8 @@ class TwoFactorServiceTest {
     private static final String EMAIL = "dr@clinica.com";
 
     @Mock
+    private AuditTrail auditTrail;
+    @Mock
     private UserRepository userRepository;
     @Mock
     private SecondFactor emailFactor;
@@ -51,7 +54,7 @@ class TwoFactorServiceTest {
         TemporaryValue storage = new InMemoryTemporaryStorage();
         TwoFactorProperties properties = new TwoFactorProperties(Duration.ofMinutes(10), 5, 5, Duration.ofHours(1));
         service = new TwoFactorService(userRepository, new TwoFactorRequirement(), storage, new TokenHasher(),
-                properties, List.of(emailFactor, authenticatorFactor));
+                properties, auditTrail, List.of(emailFactor, authenticatorFactor));
     }
 
     private User user(Role role, MfaMethod method) {

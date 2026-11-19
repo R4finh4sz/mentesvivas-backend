@@ -1,5 +1,6 @@
 package com.mentesvivas.backend.service.auth;
 
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.entity.user.User;
 import com.mentesvivas.backend.exception.auth.AccountLockedException;
 import com.mentesvivas.backend.exception.auth.InvalidCredentialsException;
@@ -28,6 +29,8 @@ class CredentialAuthenticatorTest {
     private static final String PASSWORD = "SenhaForte1";
 
     @Mock
+    private AuditTrail auditTrail;
+    @Mock
     private UserRepository userRepository;
     @Mock
     private LoginLockoutService lockoutService;
@@ -38,7 +41,7 @@ class CredentialAuthenticatorTest {
     @BeforeEach
     void setUp() {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(4);
-        authenticator = new CredentialAuthenticator(userRepository, encoder, lockoutService);
+        authenticator = new CredentialAuthenticator(userRepository, encoder, lockoutService, auditTrail);
         user = new User();
         user.setEmail(EMAIL);
         user.setPasswordHash(encoder.encode(PASSWORD));

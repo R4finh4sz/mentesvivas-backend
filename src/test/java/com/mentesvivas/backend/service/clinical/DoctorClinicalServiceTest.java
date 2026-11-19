@@ -78,7 +78,7 @@ class DoctorClinicalServiceTest {
         assertThat(response.description()).isEqualTo("Dipirona");
         assertThat(profile.getAllergyStatus()).isEqualTo(AllergyStatus.INFORMED);
         verify(changeRecorder).record(eq(PATIENT), eq(SensitiveField.ALLERGY), eq(ChangeType.CREATED),
-                anyString(), eq(doctor.getId()));
+                anyString(), eq(doctor.getId()), org.mockito.ArgumentMatchers.isNull(), anyString());
     }
 
     @Test
@@ -95,7 +95,7 @@ class DoctorClinicalServiceTest {
         assertThat(allergy.getDescription()).isEqualTo("Dipirona");
         assertThat(allergy.getSeverity()).isEqualTo(AllergySeverity.SEVERE);
         verify(changeRecorder).record(eq(PATIENT), eq(SensitiveField.ALLERGY), eq(ChangeType.UPDATED),
-                anyString(), eq(doctor.getId()));
+                anyString(), eq(doctor.getId()), anyString(), anyString());
     }
 
     @Test
@@ -122,7 +122,7 @@ class DoctorClinicalServiceTest {
         verify(allergyRepository).delete(allergy);
         assertThat(profile.getAllergyStatus()).isEqualTo(AllergyStatus.NOT_INFORMED);
         verify(changeRecorder).record(eq(PATIENT), eq(SensitiveField.ALLERGY), eq(ChangeType.DELETED),
-                anyString(), eq(doctor.getId()));
+                anyString(), eq(doctor.getId()), anyString(), org.mockito.ArgumentMatchers.isNull());
     }
 
     @Test
@@ -155,7 +155,7 @@ class DoctorClinicalServiceTest {
 
         assertThat(status).isEqualTo(AllergyStatus.NONE_KNOWN);
         verify(changeRecorder).record(eq(PATIENT), eq(SensitiveField.ALLERGY_STATUS), eq(ChangeType.UPDATED),
-                anyString(), eq(doctor.getId()));
+                anyString(), eq(doctor.getId()), anyString(), eq("NONE_KNOWN"));
     }
 
     @Test
@@ -168,7 +168,7 @@ class DoctorClinicalServiceTest {
         assertThat(profile.getDeclaredDisease()).isEqualTo("Alzheimer");
         assertThat(profile.isDeclaredDiseaseValidated()).isTrue();
         verify(changeRecorder).record(eq(PATIENT), eq(SensitiveField.DECLARED_DISEASE), eq(ChangeType.UPDATED),
-                anyString(), eq(doctor.getId()));
+                anyString(), eq(doctor.getId()), org.mockito.ArgumentMatchers.any(), anyString());
     }
 
     @Test

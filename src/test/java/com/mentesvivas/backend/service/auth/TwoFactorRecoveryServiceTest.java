@@ -1,5 +1,6 @@
 package com.mentesvivas.backend.service.auth;
 
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.dto.auth.LoginRequest;
 import com.mentesvivas.backend.dto.auth.TwoFactorChallengeResponse;
 import com.mentesvivas.backend.entity.user.MfaMethod;
@@ -32,6 +33,8 @@ class TwoFactorRecoveryServiceTest {
     private static final String EMAIL = "dr.paulo@clinica.com";
 
     @Mock
+    private AuditTrail auditTrail;
+    @Mock
     private CredentialAuthenticator credentialAuthenticator;
     @Mock
     private TwoFactorService twoFactorService;
@@ -47,7 +50,7 @@ class TwoFactorRecoveryServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new TwoFactorRecoveryService(credentialAuthenticator, requirement, twoFactorService, backupCodes, emails);
+        service = new TwoFactorRecoveryService(credentialAuthenticator, requirement, twoFactorService, backupCodes, emails, auditTrail);
         user = new User() {
             @Override
             public UUID getId() {

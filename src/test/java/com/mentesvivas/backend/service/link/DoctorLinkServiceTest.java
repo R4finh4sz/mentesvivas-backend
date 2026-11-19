@@ -1,5 +1,6 @@
 package com.mentesvivas.backend.service.link;
 
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.dto.link.RequestDoctorLinkRequest;
 import com.mentesvivas.backend.entity.link.DoctorPatientLink;
 import com.mentesvivas.backend.entity.link.LinkStatus;
@@ -40,6 +41,8 @@ import static org.mockito.Mockito.when;
 class DoctorLinkServiceTest {
 
     @Mock
+    private AuditTrail auditTrail;
+    @Mock
     private CurrentUser currentUser;
     @Mock
     private UserRepository userRepository;
@@ -62,7 +65,7 @@ class DoctorLinkServiceTest {
     @BeforeEach
     void setUp() {
         service = new DoctorLinkService(currentUser, new RoleRequirement(currentUser), userRepository, linkRepository,
-                caregiverLinkRepository, pendingRepository, notifications, emails);
+                caregiverLinkRepository, pendingRepository, notifications, emails, auditTrail);
         doctor = user(Role.DOCTOR, "dr@clinica.com");
         doctor.setCrmVerified(true);
         patient = user(Role.PATIENT, "paciente@exemplo.com");
