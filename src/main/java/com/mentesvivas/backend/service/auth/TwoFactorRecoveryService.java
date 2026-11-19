@@ -1,5 +1,8 @@
 package com.mentesvivas.backend.service.auth;
 
+import com.mentesvivas.backend.entity.audit.AuditEventType;
+import com.mentesvivas.backend.entity.audit.AuditRecord;
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.dto.auth.LoginRequest;
 import com.mentesvivas.backend.dto.auth.TwoFactorChallengeResponse;
 import com.mentesvivas.backend.entity.user.MfaMethod;
@@ -19,6 +22,7 @@ public class TwoFactorRecoveryService {
     private final TwoFactorService twoFactorService;
     private final BackupCodeService backupCodes;
     private final TwoFactorEmails emails;
+    private final AuditTrail auditTrail;
 
     @Transactional
     public TwoFactorChallengeResponse recoverWithEmail(LoginRequest request) {
@@ -29,6 +33,8 @@ public class TwoFactorRecoveryService {
         user.setMfaMethod(MfaMethod.EMAIL);
         user.setTotpSecret(null);
         backupCodes.clear(user.getId());
+        auditTrail.record(AuditRecord.of(AuditEventType.TWO_FACTOR_RECOVERED, user.getId())
+                .withValues(MfaMethod.AUTHENTICATOR.name(), MfaMethod.EMAIL.name()));
         emails.sendMethodChangedNotice(user.getEmail());
         return twoFactorService.challenge(user);
     }

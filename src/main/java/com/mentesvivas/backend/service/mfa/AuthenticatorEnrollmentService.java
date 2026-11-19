@@ -1,5 +1,8 @@
 package com.mentesvivas.backend.service.mfa;
 
+import com.mentesvivas.backend.entity.audit.AuditEventType;
+import com.mentesvivas.backend.entity.audit.AuditRecord;
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.cache.TemporaryValue;
 import com.mentesvivas.backend.dto.mfa.AuthenticatorActivatedResponse;
 import com.mentesvivas.backend.dto.mfa.AuthenticatorSetupResponse;
@@ -29,6 +32,7 @@ public class AuthenticatorEnrollmentService {
     private final AuthenticatorCodeVerifier verifier;
     private final AuthenticatorCredentialVerifier credentialVerifier;
     private final BackupCodeService backupCodes;
+    private final AuditTrail auditTrail;
 
     @Transactional(readOnly = true)
     public MfaStatusResponse status() {
@@ -55,6 +59,8 @@ public class AuthenticatorEnrollmentService {
         user.setTotpSecret(encrypted);
         user.setMfaMethod(MfaMethod.AUTHENTICATOR);
         pendingSetups.remove(setupKey(user));
+        auditTrail.record(AuditRecord.of(AuditEventType.AUTHENTICATOR_ENABLED, user.getId())
+                .withValues(MfaMethod.EMAIL.name(), MfaMethod.AUTHENTICATOR.name()));
         return new AuthenticatorActivatedResponse(user.getMfaMethod(), List.of(MfaMethod.values()),
                 backupCodes.regenerate(user.getId()));
     }
@@ -69,6 +75,8 @@ public class AuthenticatorEnrollmentService {
         user.setTotpSecret(null);
         user.setMfaMethod(MfaMethod.EMAIL);
         backupCodes.clear(user.getId());
+        auditTrail.record(AuditRecord.of(AuditEventType.AUTHENTICATOR_DISABLED, user.getId())
+                .withValues(MfaMethod.AUTHENTICATOR.name(), MfaMethod.EMAIL.name()));
         return new MfaStatusResponse(user.getMfaMethod(), List.of(MfaMethod.values()));
     }
 
@@ -79,7 +87,9 @@ public class AuthenticatorEnrollmentService {
             throw new ConflictException("O aplicativo autenticador nao esta ativo.");
         }
         credentialVerifier.verify(user, code);
-        return new BackupCodesResponse(backupCodes.regenerate(user.getId()));
+        BackupCodesResponse response = new BackupCodesResponse(backupCodes.regenerate(user.getId()));
+        auditTrail.record(AuditRecord.of(AuditEventType.BACKUP_CODES_REGENERATED, user.getId()));
+        return response;
     }
 
     private String setupKey(User user) {

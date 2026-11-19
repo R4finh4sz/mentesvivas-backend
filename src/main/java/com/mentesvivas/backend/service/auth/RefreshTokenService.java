@@ -1,5 +1,8 @@
 package com.mentesvivas.backend.service.auth;
 
+import com.mentesvivas.backend.entity.audit.AuditEventType;
+import com.mentesvivas.backend.entity.audit.AuditRecord;
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.config.JwtProperties;
 import com.mentesvivas.backend.entity.auth.RefreshToken;
 import com.mentesvivas.backend.entity.user.User;
@@ -22,6 +25,7 @@ public class RefreshTokenService {
     private final JwtProperties properties;
     private final RefreshTokenRepository refreshTokenRepository;
     private final TokenHasher tokenHasher;
+    private final AuditTrail auditTrail;
 
     @Transactional
     public String create(User user) {
@@ -41,7 +45,10 @@ public class RefreshTokenService {
     public void revoke(String value) {
         refreshTokenRepository.findByTokenHash(tokenHasher.hash(value))
                 .filter(token -> token.getRevokedAt() == null)
-                .ifPresent(token -> token.setRevokedAt(Instant.now()));
+                .ifPresent(token -> {
+                    token.setRevokedAt(Instant.now());
+                    auditTrail.record(AuditRecord.of(AuditEventType.LOGOUT, token.getUser().getId()));
+                });
     }
 
     @Transactional
@@ -57,6 +64,7 @@ public class RefreshTokenService {
 
         if (current.getRevokedAt() != null) {
             refreshTokenRepository.revokeAllByUser(current.getUser().getId(), now);
+            auditTrail.record(AuditRecord.of(AuditEventType.REFRESH_TOKEN_REUSED, current.getUser().getId()));
             throw new InvalidSessionException();
         }
         if (!current.isActive(now)) {
@@ -64,6 +72,7 @@ public class RefreshTokenService {
         }
 
         current.setRevokedAt(now);
+        auditTrail.record(AuditRecord.of(AuditEventType.TOKEN_REFRESHED, current.getUser().getId()));
         return current.getUser();
     }
 }

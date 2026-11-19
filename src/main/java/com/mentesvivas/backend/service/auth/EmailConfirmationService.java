@@ -1,5 +1,8 @@
 package com.mentesvivas.backend.service.auth;
 
+import com.mentesvivas.backend.entity.audit.AuditEventType;
+import com.mentesvivas.backend.entity.audit.AuditRecord;
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.config.EmailConfirmationProperties;
 import com.mentesvivas.backend.dto.auth.CodeRequestedResponse;
 import com.mentesvivas.backend.entity.user.User;
@@ -28,6 +31,7 @@ public class EmailConfirmationService {
     private final EmailConfirmationEmails emails;
     private final EmailConfirmationProperties properties;
     private final PendingInvitationAttacher invitationAttacher;
+    private final AuditTrail auditTrail;
 
     public void sendCode(User user) {
         if (user.isEmailConfirmed()) {
@@ -55,6 +59,7 @@ public class EmailConfirmationService {
         codeService.validateAndConsume(emailConfirmationPolicy, email, code);
         User user = userRepository.findByEmail(email).orElseThrow(InvalidCodeException::new);
         user.setEmailConfirmed(true);
+        auditTrail.record(AuditRecord.of(AuditEventType.EMAIL_CONFIRMED, user.getId()));
         invitationAttacher.attach(user);
     }
 }

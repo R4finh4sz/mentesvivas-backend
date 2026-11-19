@@ -1,5 +1,8 @@
 package com.mentesvivas.backend.service.user;
 
+import com.mentesvivas.backend.entity.audit.AuditEventType;
+import com.mentesvivas.backend.entity.audit.AuditRecord;
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.dto.user.DoctorRegistrationRequest;
 import com.mentesvivas.backend.dto.user.RegistrationRequest;
 import com.mentesvivas.backend.dto.user.UserResponse;
@@ -33,6 +36,7 @@ public class RegistrationService {
     private final EmailConfirmationService emailConfirmationService;
     private final AddressService addressService;
     private final EmergencyContactService emergencyContactService;
+    private final AuditTrail auditTrail;
 
     @Transactional
     public UserResponse register(RegistrationRequest request) {
@@ -83,6 +87,8 @@ public class RegistrationService {
     private UserResponse saveWithAcceptance(User user, List<Integer> termsVersions) {
         User saved = userRepository.save(user);
         termsAcceptanceService.registerAll(saved, termsVersions);
+        auditTrail.record(AuditRecord.of(AuditEventType.ACCOUNT_REGISTERED, saved.getId())
+                .withValues(null, saved.getRole().name()));
         emailConfirmationService.sendCodeKeepingFlow(saved);
         return UserMapper.toResponse(saved);
     }
