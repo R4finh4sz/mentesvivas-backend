@@ -1,5 +1,7 @@
 package com.mentesvivas.backend.service.clinical;
 
+import com.mentesvivas.backend.entity.audit.PatientDataArea;
+import com.mentesvivas.backend.service.audit.AccessLog;
 import com.mentesvivas.backend.dto.clinical.DeclareDiseaseRequest;
 import com.mentesvivas.backend.dto.patient.AddAllergyRequest;
 import com.mentesvivas.backend.dto.patient.AllergyResponse;
@@ -30,10 +32,12 @@ public class DoctorClinicalService {
     private final AllergyRepository allergyRepository;
     private final PatientProfileLoader profileLoader;
     private final SensitiveChangeRecorder changeRecorder;
+    private final AccessLog accessLog;
 
     @Transactional
     public AllergyResponse addAllergy(UUID patientId, AddAllergyRequest request) {
         User doctor = access.requireDoctorOf(patientId);
+        accessLog.record(doctor.getId(), patientId, PatientDataArea.ALLERGIES);
         Allergy allergy = new Allergy();
         allergy.setPatientId(patientId);
         allergy.setCreatedBy(doctor.getId());
@@ -49,6 +53,7 @@ public class DoctorClinicalService {
     @Transactional
     public AllergyResponse updateAllergy(UUID patientId, UUID allergyId, AddAllergyRequest request) {
         User doctor = access.requireDoctorOf(patientId);
+        accessLog.record(doctor.getId(), patientId, PatientDataArea.ALLERGIES);
         Allergy allergy = findAllergy(patientId, allergyId);
         String before = describe(allergy);
         apply(allergy, request);
@@ -61,6 +66,7 @@ public class DoctorClinicalService {
     @Transactional
     public void removeAllergy(UUID patientId, UUID allergyId) {
         User doctor = access.requireDoctorOf(patientId);
+        accessLog.record(doctor.getId(), patientId, PatientDataArea.ALLERGIES);
         Allergy allergy = findAllergy(patientId, allergyId);
         allergyRepository.delete(allergy);
         allergyRepository.flush();
@@ -75,6 +81,7 @@ public class DoctorClinicalService {
     @Transactional
     public AllergyStatus setAllergyStatus(UUID patientId, SetAllergyStatusRequest request) {
         User doctor = access.requireDoctorOf(patientId);
+        accessLog.record(doctor.getId(), patientId, PatientDataArea.ALLERGIES);
         if (allergyRepository.existsByPatientId(patientId)) {
             throw new ConflictException("Existem alergias cadastradas; o estado permanece como informada.");
         }
@@ -92,6 +99,7 @@ public class DoctorClinicalService {
     @Transactional
     public void validateDisease(UUID patientId, DeclareDiseaseRequest request) {
         User doctor = access.requireDoctorOf(patientId);
+        accessLog.record(doctor.getId(), patientId, PatientDataArea.DECLARED_DISEASE);
         PatientProfile profile = profileLoader.getOrCreate(patientId);
         String before = profile.getDeclaredDisease();
         profile.setDeclaredDisease(request.disease());
