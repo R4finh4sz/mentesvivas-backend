@@ -1,5 +1,6 @@
 package com.mentesvivas.backend.service.patient;
 
+import com.mentesvivas.backend.dto.patient.CareTeamResponse;
 import com.mentesvivas.backend.dto.patient.CompletenessResponse;
 import com.mentesvivas.backend.dto.patient.UpdatePatientProfileRequest;
 import com.mentesvivas.backend.entity.patient.AllergyStatus;
@@ -52,6 +53,8 @@ class PatientProfileServiceTest {
     private ProfileCompletenessService completenessService;
     @Mock
     private SensitiveChangeRecorder changeRecorder;
+    @Mock
+    private CareTeamLoader careTeamLoader;
 
     private PatientProfileService service;
     private PatientProfile profile;
@@ -59,7 +62,7 @@ class PatientProfileServiceTest {
     @BeforeEach
     void setUp() {
         service = new PatientProfileService(currentPatient, profileLoader, allergyRepository, measurementRepository,
-                contactRepository, changeRepository, completenessService, changeRecorder);
+                contactRepository, changeRepository, completenessService, changeRecorder, careTeamLoader);
         profile = new PatientProfile(PATIENT_ID);
         when(currentPatient.get()).thenReturn(new User() {
             @Override
@@ -76,6 +79,7 @@ class PatientProfileServiceTest {
                 .thenReturn(Optional.empty());
         when(completenessService.evaluate(eq(PATIENT_ID), any(AllergyStatus.class)))
                 .thenReturn(new CompletenessResponse(false, List.of()));
+        when(careTeamLoader.load(PATIENT_ID)).thenReturn(new CareTeamResponse(List.of(), List.of()));
     }
 
     @Test
@@ -88,6 +92,15 @@ class PatientProfileServiceTest {
     }
 
     @Test
+    void profileCarriesTheCareTeamOfThePatient() {
+        var response = service.get();
+
+        assertThat(response.careTeam().doctors()).isEmpty();
+        assertThat(response.careTeam().caregivers()).isEmpty();
+        verify(careTeamLoader).load(PATIENT_ID);
+    }
+
+    @Test
     void changingTheDeclaredDiseaseKeepsItNotValidatedAndRecordsTheChange() {
         profile.setDeclaredDiseaseValidated(true);
 
@@ -97,7 +110,7 @@ class PatientProfileServiceTest {
         assertThat(response.declaredDiseaseValidated()).isFalse();
         assertThat(response.bloodType()).isEqualTo(BloodType.O_POSITIVE);
         verify(changeRecorder).record(eq(PATIENT_ID), eq(SensitiveField.DECLARED_DISEASE), eq(ChangeType.UPDATED),
-                anyString(), eq(PATIENT_ID));
+                anyString(), eq(PATIENT_ID), org.mockito.ArgumentMatchers.any(), eq("Alzheimer inicial"));
     }
 
     @Test

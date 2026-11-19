@@ -1,6 +1,8 @@
 package com.mentesvivas.backend.controller.mfa;
 
+import com.mentesvivas.backend.dto.mfa.AuthenticatorActivatedResponse;
 import com.mentesvivas.backend.dto.mfa.AuthenticatorSetupResponse;
+import com.mentesvivas.backend.dto.mfa.BackupCodesResponse;
 import com.mentesvivas.backend.dto.mfa.MfaCodeRequest;
 import com.mentesvivas.backend.dto.mfa.MfaStatusResponse;
 import com.mentesvivas.backend.service.mfa.AuthenticatorEnrollmentService;
@@ -30,8 +32,13 @@ public class MfaController {
     }
 
     @PostMapping("/authenticator/confirm")
-    public MfaStatusResponse confirm(@Valid @RequestBody MfaCodeRequest body) {
+    public AuthenticatorActivatedResponse confirm(@Valid @RequestBody MfaCodeRequest body) {
         return service.confirm(body.code());
+    }
+
+    @PostMapping("/backup-codes/regenerate")
+    public BackupCodesResponse regenerateBackupCodes(@Valid @RequestBody MfaCodeRequest body) {
+        return service.regenerateBackupCodes(body.code());
     }
 
     @PostMapping("/authenticator/disable")

@@ -1,6 +1,7 @@
 package com.mentesvivas.backend.controller.auth;
 
 import com.jayway.jsonpath.JsonPath;
+import com.mentesvivas.backend.support.AuthTestSupport;
 import com.mentesvivas.backend.support.ClearTemporaryStorage;
 import com.mentesvivas.backend.support.TermsTestSupport;
 import org.junit.jupiter.api.BeforeEach;
@@ -161,7 +162,7 @@ class AuthControllerTest {
             mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
                     {"fullName":"Pessoa Teste","cpf":"52998224725","birthDate":"1950-03-10",
                      "phone":"11999998888","email":"fraca@exemplo.com","password":"%s","passwordConfirmation":"%s",
-                     "role":"CAREGIVER","termsVersion":%d,"acceptTerms":true,"acceptHealthData":true}
+                     "role":"CAREGIVER","termsVersion":%d,"acceptTerms":true,"acceptHealthData":true,"address":{"cep":"01001000","street":"Praca da Se","number":"1","city":"Sao Paulo","state":"SP"}}
                     """.formatted(weak, weak, termsVersion)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.errors.password").value("a senha deve ter ao menos uma letra maiuscula, uma minuscula e um numero"));
@@ -172,8 +173,8 @@ class AuthControllerTest {
         return mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
                 {"fullName":"Pessoa Teste","cpf":"%s","birthDate":"1950-03-10",
                  "phone":"11999998888","email":"%s","password":"%s","passwordConfirmation":"%s",
-                 "role":"%s","termsVersion":%d,"acceptTerms":true,"acceptHealthData":true}
-                """.formatted(cpf, email, PASSWORD, PASSWORD, role, termsVersion)));
+                 "role":"%s","termsVersion":%d,"acceptTerms":true,"acceptHealthData":true%s}
+                """.formatted(cpf, email, PASSWORD, PASSWORD, role, termsVersion, AuthTestSupport.registrationExtras(role))));
     }
 
     private ResultActions login(String email, String password) throws Exception {

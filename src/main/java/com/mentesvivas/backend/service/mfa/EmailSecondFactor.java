@@ -4,6 +4,7 @@ import com.mentesvivas.backend.config.TwoFactorProperties;
 import com.mentesvivas.backend.dto.auth.TwoFactorChallengeResponse;
 import com.mentesvivas.backend.entity.user.MfaMethod;
 import com.mentesvivas.backend.entity.user.User;
+import com.mentesvivas.backend.exception.auth.CodeSendLimitException;
 import com.mentesvivas.backend.service.auth.TwoFactorEmails;
 import com.mentesvivas.backend.service.code.CodePolicy;
 import com.mentesvivas.backend.service.code.OneTimeCodeService;
@@ -38,8 +39,9 @@ public class EmailSecondFactor implements SecondFactor {
 
     @Override
     public TwoFactorChallengeResponse challenge(User user) {
-        codeService.generate(policy, user.getEmail())
-                .ifPresent(code -> emails.sendCode(user.getEmail(), code));
+        String code = codeService.generate(policy, user.getEmail())
+                .orElseThrow(() -> new CodeSendLimitException(codeService.remainingSendBlock(policy, user.getEmail())));
+        emails.sendCode(user.getEmail(), code);
         return new TwoFactorChallengeResponse(true, MESSAGE, properties.codeValidity().toSeconds(), MfaMethod.EMAIL);
     }
 

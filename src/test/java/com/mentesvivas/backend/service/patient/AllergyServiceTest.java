@@ -75,7 +75,7 @@ class AllergyServiceTest {
         assertThat(saved.getValue().getPatientId()).isEqualTo(PATIENT_ID);
         assertThat(saved.getValue().getCreatedBy()).isEqualTo(PATIENT_ID);
         verify(changeRecorder).record(eq(PATIENT_ID), eq(SensitiveField.ALLERGY), eq(ChangeType.CREATED),
-                eq("Alergia adicionada: MEDICATION (SEVERE)"), eq(PATIENT_ID));
+                eq("Alergia adicionada: MEDICATION (SEVERE)"), eq(PATIENT_ID), org.mockito.ArgumentMatchers.isNull(), anyString());
     }
 
     @Test
@@ -97,7 +97,7 @@ class AllergyServiceTest {
 
         assertThat(status).isEqualTo(AllergyStatus.NONE_KNOWN);
         verify(changeRecorder).record(eq(PATIENT_ID), eq(SensitiveField.ALLERGY_STATUS), eq(ChangeType.UPDATED),
-                anyString(), eq(PATIENT_ID));
+                anyString(), eq(PATIENT_ID), anyString(), eq("NONE_KNOWN"));
     }
 
     @Test

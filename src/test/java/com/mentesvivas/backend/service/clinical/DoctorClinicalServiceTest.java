@@ -1,5 +1,6 @@
 package com.mentesvivas.backend.service.clinical;
 
+import com.mentesvivas.backend.service.audit.AccessLog;
 import com.mentesvivas.backend.dto.clinical.DeclareDiseaseRequest;
 import com.mentesvivas.backend.dto.patient.AddAllergyRequest;
 import com.mentesvivas.backend.dto.patient.SetAllergyStatusRequest;
@@ -43,6 +44,8 @@ class DoctorClinicalServiceTest {
     private static final UUID ALLERGY = UUID.randomUUID();
 
     @Mock
+    private AccessLog accessLog;
+    @Mock
     private DoctorPatientAccess access;
     @Mock
     private AllergyRepository allergyRepository;
@@ -57,7 +60,7 @@ class DoctorClinicalServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new DoctorClinicalService(access, allergyRepository, profileLoader, changeRecorder);
+        service = new DoctorClinicalService(access, allergyRepository, profileLoader, changeRecorder, accessLog);
         doctor = new User();
         doctor.setId(UUID.randomUUID());
         profile = new PatientProfile(PATIENT);
@@ -78,7 +81,7 @@ class DoctorClinicalServiceTest {
         assertThat(response.description()).isEqualTo("Dipirona");
         assertThat(profile.getAllergyStatus()).isEqualTo(AllergyStatus.INFORMED);
         verify(changeRecorder).record(eq(PATIENT), eq(SensitiveField.ALLERGY), eq(ChangeType.CREATED),
-                anyString(), eq(doctor.getId()));
+                anyString(), eq(doctor.getId()), org.mockito.ArgumentMatchers.isNull(), anyString());
     }
 
     @Test
@@ -95,7 +98,7 @@ class DoctorClinicalServiceTest {
         assertThat(allergy.getDescription()).isEqualTo("Dipirona");
         assertThat(allergy.getSeverity()).isEqualTo(AllergySeverity.SEVERE);
         verify(changeRecorder).record(eq(PATIENT), eq(SensitiveField.ALLERGY), eq(ChangeType.UPDATED),
-                anyString(), eq(doctor.getId()));
+                anyString(), eq(doctor.getId()), anyString(), anyString());
     }
 
     @Test
@@ -122,7 +125,7 @@ class DoctorClinicalServiceTest {
         verify(allergyRepository).delete(allergy);
         assertThat(profile.getAllergyStatus()).isEqualTo(AllergyStatus.NOT_INFORMED);
         verify(changeRecorder).record(eq(PATIENT), eq(SensitiveField.ALLERGY), eq(ChangeType.DELETED),
-                anyString(), eq(doctor.getId()));
+                anyString(), eq(doctor.getId()), anyString(), org.mockito.ArgumentMatchers.isNull());
     }
 
     @Test
@@ -155,7 +158,7 @@ class DoctorClinicalServiceTest {
 
         assertThat(status).isEqualTo(AllergyStatus.NONE_KNOWN);
         verify(changeRecorder).record(eq(PATIENT), eq(SensitiveField.ALLERGY_STATUS), eq(ChangeType.UPDATED),
-                anyString(), eq(doctor.getId()));
+                anyString(), eq(doctor.getId()), anyString(), eq("NONE_KNOWN"));
     }
 
     @Test
@@ -168,7 +171,7 @@ class DoctorClinicalServiceTest {
         assertThat(profile.getDeclaredDisease()).isEqualTo("Alzheimer");
         assertThat(profile.isDeclaredDiseaseValidated()).isTrue();
         verify(changeRecorder).record(eq(PATIENT), eq(SensitiveField.DECLARED_DISEASE), eq(ChangeType.UPDATED),
-                anyString(), eq(doctor.getId()));
+                anyString(), eq(doctor.getId()), org.mockito.ArgumentMatchers.any(), anyString());
     }
 
     @Test

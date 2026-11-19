@@ -1,5 +1,7 @@
 package com.mentesvivas.backend.service.clinical;
 
+import com.mentesvivas.backend.entity.audit.PatientDataArea;
+import com.mentesvivas.backend.service.audit.AccessLog;
 import com.mentesvivas.backend.dto.clinical.DeclareDiseaseRequest;
 import com.mentesvivas.backend.dto.patient.AddAllergyRequest;
 import com.mentesvivas.backend.dto.patient.AllergyResponse;
@@ -30,10 +32,12 @@ public class DoctorClinicalService {
     private final AllergyRepository allergyRepository;
     private final PatientProfileLoader profileLoader;
     private final SensitiveChangeRecorder changeRecorder;
+    private final AccessLog accessLog;
 
     @Transactional
     public AllergyResponse addAllergy(UUID patientId, AddAllergyRequest request) {
         User doctor = access.requireDoctorOf(patientId);
+        accessLog.record(doctor.getId(), patientId, PatientDataArea.ALLERGIES);
         Allergy allergy = new Allergy();
         allergy.setPatientId(patientId);
         allergy.setCreatedBy(doctor.getId());
@@ -42,24 +46,27 @@ public class DoctorClinicalService {
         profileLoader.getOrCreate(patientId).setAllergyStatus(AllergyStatus.INFORMED);
         changeRecorder.record(patientId, SensitiveField.ALLERGY, ChangeType.CREATED,
                 "Alergia adicionada pelo medico: %s (%s)".formatted(request.category(), request.severity()),
-                doctor.getId());
+                doctor.getId(), null, describe(allergy));
         return PatientMapper.toResponse(saved);
     }
 
     @Transactional
     public AllergyResponse updateAllergy(UUID patientId, UUID allergyId, AddAllergyRequest request) {
         User doctor = access.requireDoctorOf(patientId);
+        accessLog.record(doctor.getId(), patientId, PatientDataArea.ALLERGIES);
         Allergy allergy = findAllergy(patientId, allergyId);
+        String before = describe(allergy);
         apply(allergy, request);
         changeRecorder.record(patientId, SensitiveField.ALLERGY, ChangeType.UPDATED,
                 "Alergia alterada pelo medico: %s (%s)".formatted(request.category(), request.severity()),
-                doctor.getId());
+                doctor.getId(), before, describe(allergy));
         return PatientMapper.toResponse(allergy);
     }
 
     @Transactional
     public void removeAllergy(UUID patientId, UUID allergyId) {
         User doctor = access.requireDoctorOf(patientId);
+        accessLog.record(doctor.getId(), patientId, PatientDataArea.ALLERGIES);
         Allergy allergy = findAllergy(patientId, allergyId);
         allergyRepository.delete(allergy);
         allergyRepository.flush();
@@ -67,20 +74,24 @@ public class DoctorClinicalService {
             profileLoader.getOrCreate(patientId).setAllergyStatus(AllergyStatus.NOT_INFORMED);
         }
         changeRecorder.record(patientId, SensitiveField.ALLERGY, ChangeType.DELETED,
-                "Alergia removida pelo medico: %s".formatted(allergy.getCategory()), doctor.getId());
+                "Alergia removida pelo medico: %s".formatted(allergy.getCategory()), doctor.getId(),
+                describe(allergy), null);
     }
 
     @Transactional
     public AllergyStatus setAllergyStatus(UUID patientId, SetAllergyStatusRequest request) {
         User doctor = access.requireDoctorOf(patientId);
+        accessLog.record(doctor.getId(), patientId, PatientDataArea.ALLERGIES);
         if (allergyRepository.existsByPatientId(patientId)) {
             throw new ConflictException("Existem alergias cadastradas; o estado permanece como informada.");
         }
         PatientProfile profile = profileLoader.getOrCreate(patientId);
         if (profile.getAllergyStatus() != request.status()) {
+            AllergyStatus previous = profile.getAllergyStatus();
             profile.setAllergyStatus(request.status());
             changeRecorder.record(patientId, SensitiveField.ALLERGY_STATUS, ChangeType.UPDATED,
-                    "Estado das alergias alterado pelo medico para %s".formatted(request.status()), doctor.getId());
+                    "Estado das alergias alterado pelo medico para %s".formatted(request.status()), doctor.getId(),
+                    String.valueOf(previous), String.valueOf(request.status()));
         }
         return profile.getAllergyStatus();
     }
@@ -88,11 +99,17 @@ public class DoctorClinicalService {
     @Transactional
     public void validateDisease(UUID patientId, DeclareDiseaseRequest request) {
         User doctor = access.requireDoctorOf(patientId);
+        accessLog.record(doctor.getId(), patientId, PatientDataArea.DECLARED_DISEASE);
         PatientProfile profile = profileLoader.getOrCreate(patientId);
+        String before = profile.getDeclaredDisease();
         profile.setDeclaredDisease(request.disease());
         profile.setDeclaredDiseaseValidated(true);
         changeRecorder.record(patientId, SensitiveField.DECLARED_DISEASE, ChangeType.UPDATED,
-                "Doenca registrada e validada pelo medico", doctor.getId());
+                "Doenca registrada e validada pelo medico", doctor.getId(), before, request.disease());
+    }
+
+    private String describe(Allergy allergy) {
+        return "%s | %s | %s".formatted(allergy.getCategory(), allergy.getDescription(), allergy.getSeverity());
     }
 
     private void apply(Allergy allergy, AddAllergyRequest request) {

@@ -1,57 +1,35 @@
 package com.mentesvivas.backend.service.auth;
 
+import com.mentesvivas.backend.entity.audit.AuditEventType;
+import com.mentesvivas.backend.entity.audit.AuditRecord;
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.dto.auth.LoginRequest;
 import com.mentesvivas.backend.dto.auth.LoginResult;
 import com.mentesvivas.backend.dto.auth.TokenResponse;
 import com.mentesvivas.backend.dto.auth.VerifyTwoFactorRequest;
 import com.mentesvivas.backend.entity.user.User;
-import com.mentesvivas.backend.exception.auth.InvalidCredentialsException;
-import com.mentesvivas.backend.repository.user.UserRepository;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
 @Service
+@RequiredArgsConstructor
 public class LoginService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final CredentialAuthenticator credentialAuthenticator;
     private final TokenService tokenService;
-    private final LoginLockoutService loginLockoutService;
     private final TwoFactorRequirement twoFactorRequirement;
     private final TwoFactorService twoFactorService;
-    private final String dummyHash;
-
-    public LoginService(UserRepository userRepository, PasswordEncoder passwordEncoder,
-                        TokenService tokenService, LoginLockoutService loginLockoutService,
-                        TwoFactorRequirement twoFactorRequirement, TwoFactorService twoFactorService) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.tokenService = tokenService;
-        this.loginLockoutService = loginLockoutService;
-        this.twoFactorRequirement = twoFactorRequirement;
-        this.twoFactorService = twoFactorService;
-        this.dummyHash = passwordEncoder.encode("dummy-password-for-constant-time");
-    }
+    private final AuditTrail auditTrail;
 
     @Transactional
     public LoginResult login(LoginRequest request) {
-        loginLockoutService.requireUnlocked(request.email());
-        Optional<User> user = userRepository.findByEmail(request.email());
-
-        String hash = user.map(User::getPasswordHash).orElse(dummyHash);
-        boolean passwordMatches = passwordEncoder.matches(request.password(), hash);
-        if (user.isEmpty() || !passwordMatches) {
-            loginLockoutService.recordFailure(request.email());
-            throw new InvalidCredentialsException();
+        User user = credentialAuthenticator.authenticate(request.email(), request.password());
+        if (twoFactorRequirement.isRequiredFor(user)) {
+            return LoginResult.challenged(twoFactorService.challenge(user));
         }
-        loginLockoutService.recordSuccess(request.email());
-        if (twoFactorRequirement.isRequiredFor(user.get())) {
-            return LoginResult.challenged(twoFactorService.challenge(user.get()));
-        }
-        return LoginResult.authenticated(tokenService.issue(user.get()));
+        auditTrail.record(AuditRecord.of(AuditEventType.LOGIN_SUCCEEDED, user.getId()));
+        return LoginResult.authenticated(tokenService.issue(user));
     }
 
     @Transactional

@@ -70,6 +70,27 @@ class EmergencyContactServiceTest {
     }
 
     @Test
+    void replaceForSavesTheContactsOfTheInformedPatientAndRecordsTheChange() {
+        when(repository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+        var patient = new User() {
+            @Override
+            public UUID getId() {
+                return PATIENT_ID;
+            }
+        };
+
+        var response = service.replaceFor(patient, List.of(
+                new EmergencyContactRequest("Joao", "Filho", "11988887777", 1),
+                new EmergencyContactRequest("Maria", "Filha", "11977776666", 2)));
+
+        assertThat(response).hasSize(2);
+        verify(repository).deleteAllByPatientId(PATIENT_ID);
+        verify(changeRecorder).record(eq(PATIENT_ID), eq(SensitiveField.EMERGENCY_CONTACTS),
+                eq(ChangeType.REPLACED), anyString(), eq(PATIENT_ID));
+        org.mockito.Mockito.verifyNoInteractions(currentPatient);
+    }
+
+    @Test
     void validatesThatTwoContactsCannotShareTheSameOrder() {
         var duplicated = new ReplaceEmergencyContactsRequest(List.of(
                 new EmergencyContactRequest("Joao", "Filho", "11988887777", 1),

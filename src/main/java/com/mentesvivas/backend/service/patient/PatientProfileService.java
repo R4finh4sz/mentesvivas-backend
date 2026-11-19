@@ -35,6 +35,7 @@ public class PatientProfileService {
     private final SensitiveDataChangeRepository changeRepository;
     private final ProfileCompletenessService completenessService;
     private final SensitiveChangeRecorder changeRecorder;
+    private final CareTeamLoader careTeamLoader;
 
     @Transactional
     public PatientProfileResponse get() {
@@ -54,10 +55,12 @@ public class PatientProfileService {
             if (profile.getDeclaredDisease() != null) {
                 throw new ConflictException("Somente o medico pode alterar a doenca ja registrada.");
             }
+            String before = profile.getDeclaredDisease();
             profile.setDeclaredDisease(request.declaredDisease());
             profile.setDeclaredDiseaseValidated(false);
             changeRecorder.record(patient.getId(), SensitiveField.DECLARED_DISEASE, ChangeType.UPDATED,
-                    "Doenca declarada alterada pelo paciente (nao validada)", patient.getId());
+                    "Doenca declarada alterada pelo paciente (nao validada)", patient.getId(),
+                    before, request.declaredDisease());
         }
         return toResponse(patient, profile);
     }
@@ -86,6 +89,7 @@ public class PatientProfileService {
                 BodyMassIndex.calculate(weightKg, heightM),
                 contactRepository.findByPatientIdOrderByContactOrderAsc(patient.getId()).stream()
                         .map(PatientMapper::toResponse).toList(),
-                completenessService.evaluate(patient.getId(), profile.getAllergyStatus()));
+                completenessService.evaluate(patient.getId(), profile.getAllergyStatus()),
+                careTeamLoader.load(patient.getId()));
     }
 }

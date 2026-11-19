@@ -16,6 +16,7 @@ public record PatientProfileResponse(
         BigDecimal heightM,
         BigDecimal bmi,
         List<EmergencyContactResponse> emergencyContacts,
-        CompletenessResponse completeness
+        CompletenessResponse completeness,
+        CareTeamResponse careTeam
 ) {
 }

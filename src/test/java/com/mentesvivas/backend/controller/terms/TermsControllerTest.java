@@ -1,6 +1,7 @@
 package com.mentesvivas.backend.controller.terms;
 
 import com.jayway.jsonpath.JsonPath;
+import com.mentesvivas.backend.support.AdminTestSupport;
 import com.mentesvivas.backend.support.ClearTemporaryStorage;
 import com.mentesvivas.backend.support.TermsTestSupport;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,9 @@ class TermsControllerTest {
     private MockMvc mockMvc;
 
     @Autowired
+    private AdminTestSupport admin;
+
+    @Autowired
     private TermsTestSupport terms;
 
     @Test
@@ -41,7 +45,7 @@ class TermsControllerTest {
 
     @Test
     void adminPublishesNewVersionAndCurrentTermsArePublic() throws Exception {
-        String token = tokenOf(TermsTestSupport.ADMIN_EMAIL, TermsTestSupport.ADMIN_PASSWORD);
+        String token = admin.token();
 
         publish(token, "Termos v1").andExpect(status().isCreated()).andExpect(jsonPath("$.version").value(1));
         publish(token, "Termos v2").andExpect(status().isCreated()).andExpect(jsonPath("$.version").value(2));
@@ -109,7 +113,7 @@ class TermsControllerTest {
         return mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
                 {"fullName":"Pessoa Teste","cpf":"52998224725","birthDate":"1950-03-10",
                  "phone":"11999998888","email":"%s","password":"%s","passwordConfirmation":"%s",
-                 "role":"CAREGIVER","termsVersion":%d,"acceptTerms":true,"acceptHealthData":true}
+                 "role":"CAREGIVER","termsVersion":%d,"acceptTerms":true,"acceptHealthData":true,"address":{"cep":"01001000","street":"Praca da Se","number":"1","city":"Sao Paulo","state":"SP"}}
                 """.formatted(email, PASSWORD, PASSWORD, termsVersion)));
     }
 

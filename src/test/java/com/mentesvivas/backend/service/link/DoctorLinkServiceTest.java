@@ -1,5 +1,9 @@
 package com.mentesvivas.backend.service.link;
 
+import com.mentesvivas.backend.entity.audit.AuditRecord;
+import com.mentesvivas.backend.entity.audit.AuditEventType;
+import org.mockito.ArgumentCaptor;
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.dto.link.RequestDoctorLinkRequest;
 import com.mentesvivas.backend.entity.link.DoctorPatientLink;
 import com.mentesvivas.backend.entity.link.LinkStatus;
@@ -40,6 +44,10 @@ import static org.mockito.Mockito.when;
 class DoctorLinkServiceTest {
 
     @Mock
+    private CaregiverPatientAccess caregiverAccess;
+    @Mock
+    private AuditTrail auditTrail;
+    @Mock
     private CurrentUser currentUser;
     @Mock
     private UserRepository userRepository;
@@ -62,7 +70,7 @@ class DoctorLinkServiceTest {
     @BeforeEach
     void setUp() {
         service = new DoctorLinkService(currentUser, new RoleRequirement(currentUser), userRepository, linkRepository,
-                caregiverLinkRepository, pendingRepository, notifications, emails);
+                caregiverLinkRepository, pendingRepository, notifications, emails, auditTrail, caregiverAccess);
         doctor = user(Role.DOCTOR, "dr@clinica.com");
         doctor.setCrmVerified(true);
         patient = user(Role.PATIENT, "paciente@exemplo.com");
@@ -215,5 +223,52 @@ class DoctorLinkServiceTest {
         verify(linkRepository).save(org.mockito.ArgumentMatchers.argThat(link ->
                 link.isDoctorConfirmed() && !link.isPatientAuthorized() && link.getStatus() == LinkStatus.PENDING));
         verify(notifications).notify(eq(patient.getId()), eq(NotificationType.DOCTOR_INVITATION), any(), anyString());
+    }
+
+    @Test
+    void representativeCaregiverAcceptsInTheNameOfThePatientAndTheAuditSaysSo() {
+        DoctorPatientLink link = pending(true, false, doctor);
+        when(currentUser.get()).thenReturn(caregiver);
+        when(caregiverAccess.isRepresentative(caregiver.getId(), patient.getId())).thenReturn(true);
+
+        assertThat(service.accept(link.getId()).status()).isEqualTo(LinkStatus.ACTIVE);
+
+        ArgumentCaptor<AuditRecord> captor = ArgumentCaptor.forClass(AuditRecord.class);
+        verify(auditTrail).record(captor.capture());
+        assertThat(captor.getValue().type()).isEqualTo(AuditEventType.DOCTOR_LINK_ACCEPTED);
+        assertThat(captor.getValue().actorUserId()).isEqualTo(caregiver.getId());
+        assertThat(captor.getValue().patientUserId()).isEqualTo(patient.getId());
+        assertThat(captor.getValue().onBehalfOfUserId()).isEqualTo(patient.getId());
+    }
+
+    @Test
+    void representativeCaregiverDeclinesInTheNameOfThePatient() {
+        DoctorPatientLink link = pending(true, false, doctor);
+        when(currentUser.get()).thenReturn(caregiver);
+        when(caregiverAccess.isRepresentative(caregiver.getId(), patient.getId())).thenReturn(true);
+
+        assertThat(service.decline(link.getId()).status()).isEqualTo(LinkStatus.DECLINED);
+    }
+
+    @Test
+    void thePatientOwnAnswerIsNotMarkedAsOnBehalf() {
+        DoctorPatientLink link = pending(true, false, doctor);
+        when(currentUser.get()).thenReturn(patient);
+
+        service.accept(link.getId());
+
+        ArgumentCaptor<AuditRecord> captor = ArgumentCaptor.forClass(AuditRecord.class);
+        verify(auditTrail).record(captor.capture());
+        assertThat(captor.getValue().onBehalfOfUserId()).isNull();
+    }
+
+    @Test
+    void representativeCannotEndTheDoctorLink() {
+        DoctorPatientLink link = pending(true, true, doctor);
+        link.setStatus(LinkStatus.ACTIVE);
+        when(currentUser.get()).thenReturn(caregiver);
+        lenient().when(caregiverAccess.isRepresentative(caregiver.getId(), patient.getId())).thenReturn(true);
+
+        assertThatThrownBy(() -> service.end(link.getId())).isInstanceOf(AccessDeniedException.class);
     }
 }

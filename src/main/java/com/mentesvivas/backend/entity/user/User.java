@@ -74,6 +74,9 @@ public class User {
     private String totpSecret;
 
     @Column(nullable = false)
+    private boolean active = true;
+
+    @Column(nullable = false)
     private Instant createdAt;
 
     @Column(nullable = false)

@@ -22,9 +22,13 @@ class TwoFactorRequirementTest {
     }
 
     @Test
+    void administratorsMustUseTheSecondFactor() {
+        assertThat(requirement.isRequiredFor(userWith(Role.ADMINISTRATOR))).isTrue();
+    }
+
+    @Test
     void otherProfilesDoNot() {
         assertThat(requirement.isRequiredFor(userWith(Role.PATIENT))).isFalse();
         assertThat(requirement.isRequiredFor(userWith(Role.CAREGIVER))).isFalse();
-        assertThat(requirement.isRequiredFor(userWith(Role.ADMINISTRATOR))).isFalse();
     }
 }

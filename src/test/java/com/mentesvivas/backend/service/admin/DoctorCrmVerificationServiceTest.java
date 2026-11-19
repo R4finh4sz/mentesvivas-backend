@@ -1,9 +1,11 @@
 package com.mentesvivas.backend.service.admin;
 
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.entity.admin.AdminAction;
 import com.mentesvivas.backend.entity.admin.AdminActionType;
 import com.mentesvivas.backend.entity.user.Role;
 import com.mentesvivas.backend.entity.user.User;
+import com.mentesvivas.backend.exception.common.ConflictException;
 import com.mentesvivas.backend.exception.common.ResourceNotFoundException;
 import com.mentesvivas.backend.repository.admin.AdminActionRepository;
 import com.mentesvivas.backend.repository.user.UserRepository;
@@ -30,6 +32,8 @@ import static org.mockito.Mockito.when;
 class DoctorCrmVerificationServiceTest {
 
     @Mock
+    private AuditTrail auditTrail;
+    @Mock
     private UserRepository userRepository;
     @Mock
     private AdminActionRepository actionRepository;
@@ -41,7 +45,7 @@ class DoctorCrmVerificationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new DoctorCrmVerificationService(userRepository, actionRepository, currentUser);
+        service = new DoctorCrmVerificationService(userRepository, actionRepository, currentUser, new ManualCrmConfirmation(), auditTrail);
         admin = user(Role.ADMINISTRATOR);
     }
 
@@ -50,6 +54,18 @@ class DoctorCrmVerificationServiceTest {
         user.setId(UUID.randomUUID());
         user.setRole(role);
         return user;
+    }
+
+    @Test
+    void crmThatTheConfirmationRejectsStaysUnverifiedAndIsNotRecorded() {
+        service = new DoctorCrmVerificationService(userRepository, actionRepository, currentUser, doctor -> false, auditTrail);
+        User doctor = user(Role.DOCTOR);
+        when(userRepository.findById(doctor.getId())).thenReturn(Optional.of(doctor));
+
+        assertThatThrownBy(() -> service.verify(doctor.getId())).isInstanceOf(ConflictException.class);
+
+        assertThat(doctor.isCrmVerified()).isFalse();
+        verify(actionRepository, never()).save(any());
     }
 
     @Test

@@ -24,6 +24,7 @@ public class SecurityContextCurrentUser implements CurrentUser {
             throw new UserNotAuthenticatedException();
         }
         return userRepository.findById(idOf(authentication))
+                .filter(User::isActive)
                 .orElseThrow(InvalidSessionException::new);
     }
 

@@ -1,5 +1,6 @@
 package com.mentesvivas.backend.service.auth;
 
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.config.PasswordRecoveryProperties;
 import com.mentesvivas.backend.dto.auth.ResetPasswordRequest;
 import com.mentesvivas.backend.entity.user.User;
@@ -35,6 +36,8 @@ class PasswordRecoveryServiceTest {
     private final CodePolicy policy = new CodePolicy("recovery", Duration.ofMinutes(30), 5, 3, Duration.ofHours(1));
 
     @Mock
+    private AuditTrail auditTrail;
+    @Mock
     private UserRepository userRepository;
     @Mock
     private OneTimeCodeService codeService;
@@ -53,7 +56,7 @@ class PasswordRecoveryServiceTest {
     void setUp() {
         PasswordRecoveryProperties properties = new PasswordRecoveryProperties(Duration.ofMinutes(30), 5, 3, Duration.ofHours(1));
         service = new PasswordRecoveryService(userRepository, codeService, policy, emails, passwordEncoder,
-                refreshTokenService, loginLockoutService, properties);
+                refreshTokenService, loginLockoutService, properties, auditTrail);
     }
 
     @Test

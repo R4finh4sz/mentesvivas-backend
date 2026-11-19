@@ -1,5 +1,11 @@
 package com.mentesvivas.backend.service.terms;
 
+import com.mentesvivas.backend.exception.common.ResourceNotFoundException;
+import com.mentesvivas.backend.repository.user.UserRepository;
+import com.mentesvivas.backend.service.link.CaregiverPatientAccess;
+import com.mentesvivas.backend.entity.audit.AuditEventType;
+import com.mentesvivas.backend.entity.audit.AuditRecord;
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.dto.terms.AcceptTermsRequest;
 import com.mentesvivas.backend.dto.terms.TermsAcceptanceResponse;
 import com.mentesvivas.backend.entity.terms.TermsAcceptance;
@@ -22,6 +28,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.Optional;
 
 @Service
@@ -33,6 +40,9 @@ public class TermsAcceptanceService {
     private final TermsVersionRepository termsVersionRepository;
     private final TermsAcceptanceRepository termsAcceptanceRepository;
     private final CurrentUser currentUser;
+    private final AuditTrail auditTrail;
+    private final CaregiverPatientAccess caregiverAccess;
+    private final UserRepository userRepository;
 
     public List<Integer> validateSignup(Role role, Map<TermsType, Integer> informedVersions) {
         List<Integer> versions = new ArrayList<>();
@@ -62,7 +72,18 @@ public class TermsAcceptanceService {
 
     @Transactional
     public TermsAcceptanceResponse accept(AcceptTermsRequest request) {
-        User user = currentUser.get();
+        return acceptFor(currentUser.get(), request, null);
+    }
+
+    @Transactional
+    public TermsAcceptanceResponse acceptOnBehalfOf(UUID patientId, AcceptTermsRequest request) {
+        User representative = caregiverAccess.requireRepresentativeOf(patientId);
+        User patient = userRepository.findById(patientId)
+                .orElseThrow(() -> new ResourceNotFoundException("Paciente nao encontrado."));
+        return acceptFor(patient, request, representative.getId());
+    }
+
+    private TermsAcceptanceResponse acceptFor(User user, AcceptTermsRequest request, UUID representativeId) {
         TermsVersion terms = termsVersionRepository.findById(request.version())
                 .orElseThrow(TermsVersionChangedException::new);
         if (!terms.appliesTo(user.getRole())) {
@@ -74,7 +95,7 @@ public class TermsAcceptanceService {
         if (!isCurrent) {
             throw new TermsVersionChangedException();
         }
-        return TermsMapper.toResponse(register(user, terms.getVersion()));
+        return TermsMapper.toResponse(register(user, terms.getVersion(), representativeId));
     }
 
     public List<TermsAcceptanceResponse> currentUserAcceptances() {
@@ -92,7 +113,17 @@ public class TermsAcceptanceService {
     }
 
     private TermsAcceptance register(User user, Integer version) {
+        return register(user, version, null);
+    }
+
+    private TermsAcceptance register(User user, Integer version, UUID representativeId) {
         return termsAcceptanceRepository.findByUserIdAndVersion(user.getId(), version)
-                .orElseGet(() -> termsAcceptanceRepository.save(new TermsAcceptance(user, version, Instant.now())));
+                .orElseGet(() -> {
+                    TermsAcceptance saved = termsAcceptanceRepository.save(new TermsAcceptance(user, version, Instant.now()));
+                    AuditRecord record = AuditRecord.of(AuditEventType.TERMS_ACCEPTED,
+                            representativeId == null ? user.getId() : representativeId).withValues(null, "v" + version);
+                    auditTrail.record(representativeId == null ? record : record.forPatient(user.getId()).onBehalfOf(user.getId()));
+                    return saved;
+                });
     }
 }

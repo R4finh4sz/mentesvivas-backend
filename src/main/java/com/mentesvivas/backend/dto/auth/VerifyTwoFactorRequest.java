@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Size;
 
 public record VerifyTwoFactorRequest(
         @NotBlank @Email @Size(max = 254) String email,
-        @NotBlank @Pattern(regexp = "^\\d{6}$", message = "o codigo possui seis digitos") String code
+        @NotBlank @Pattern(regexp = "^(\\d{6}|\\d{10})$", message = "o codigo possui seis digitos (ou dez, no codigo de backup)") String code
 ) {
 
     public VerifyTwoFactorRequest {

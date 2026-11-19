@@ -109,9 +109,7 @@ class DoctorLinkControllerTest {
                 .andExpect(jsonPath("$[0].type").value("DOCTOR_LINK_REQUEST"));
         act(doctor, id, "accept").andExpect(jsonPath("$.status").value("PENDING"));
         allergy(doctor, patient).andExpect(status().isForbidden());
-        act(caregiver, id, "accept").andExpect(status().isForbidden());
-
-        act(patient, id, "accept").andExpect(jsonPath("$.status").value("ACTIVE"));
+        act(caregiver, id, "accept").andExpect(jsonPath("$.status").value("ACTIVE"));
         allergy(doctor, patient).andExpect(status().isCreated());
     }
 

@@ -1,6 +1,7 @@
 package com.mentesvivas.backend.controller.admin;
 
 import com.jayway.jsonpath.JsonPath;
+import com.mentesvivas.backend.support.AdminTestSupport;
 import com.mentesvivas.backend.support.AuthTestSupport;
 import com.mentesvivas.backend.support.ClearTemporaryStorage;
 import com.mentesvivas.backend.support.TermsTestSupport;
@@ -34,6 +35,9 @@ class DoctorCrmControllerTest {
     private MockMvc mockMvc;
 
     @Autowired
+    private AdminTestSupport admin;
+
+    @Autowired
     private AuthTestSupport auth;
 
     @Autowired
@@ -57,12 +61,7 @@ class DoctorCrmControllerTest {
     }
 
     private String loginAdmin() throws Exception {
-        String body = mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"%s\",\"password\":\"%s\"}"
-                                .formatted(TermsTestSupport.ADMIN_EMAIL, TermsTestSupport.ADMIN_PASSWORD)))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-        return JsonPath.read(body, "$.accessToken");
+        return admin.token();
     }
 
     @Test

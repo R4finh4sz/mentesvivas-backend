@@ -124,7 +124,7 @@ class DoctorClinicalControllerTest {
                 .andExpect(jsonPath("$.allergyStatus").value("NOT_INFORMED"));
 
         mockMvc.perform(get("/api/patients/me/changes").header("Authorization", bearer(patientToken)))
-                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$.length()").value(4))
                 .andExpect(jsonPath("$[0].changeType").value("DELETED"))
                 .andExpect(jsonPath("$[0].changedBy").value(doctorId.toString()));
     }

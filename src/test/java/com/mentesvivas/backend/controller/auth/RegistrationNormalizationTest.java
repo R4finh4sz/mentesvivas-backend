@@ -61,7 +61,7 @@ class RegistrationNormalizationTest {
         mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
                         {"fullName":"  Maria   da  Silva ","cpf":"529.982.247-25","birthDate":"1950-03-10",
                          "phone":"(11) 99999-8888","email":"maria@exemplo.com","password":"%s","passwordConfirmation":"%s",
-                         "role":"PATIENT","termsVersion":%d,"acceptTerms":true,"acceptHealthData":true}
+                         "role":"PATIENT","termsVersion":%d,"acceptTerms":true,"acceptHealthData":true,"address":{"cep":"01001000","street":"Praca da Se","number":"1","city":"Sao Paulo","state":"SP"},"emergencyContacts":[{"name":"Maria Souza","relationship":"Filha","phone":"11977776666","order":1},{"name":"Joao Souza","relationship":"Filho","phone":"11966665555","order":2}]}
                         """.formatted(PASSWORD, PASSWORD, termsVersion)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.fullName").value("Maria da Silva"));
@@ -93,7 +93,7 @@ class RegistrationNormalizationTest {
         return mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
                 {"fullName":"Pessoa Teste","cpf":"%s","birthDate":"1950-03-10",
                  "phone":"11999998888","email":"%s","password":"%s","passwordConfirmation":"%s",
-                 "role":"CAREGIVER","termsVersion":%d,"acceptTerms":true,"acceptHealthData":true}
+                 "role":"CAREGIVER","termsVersion":%d,"acceptTerms":true,"acceptHealthData":true,"address":{"cep":"01001000","street":"Praca da Se","number":"1","city":"Sao Paulo","state":"SP"}}
                 """.formatted(cpf, email, PASSWORD, PASSWORD, termsVersion)));
     }
 

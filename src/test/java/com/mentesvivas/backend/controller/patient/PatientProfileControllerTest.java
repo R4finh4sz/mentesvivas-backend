@@ -59,7 +59,7 @@ class PatientProfileControllerTest {
                 .andExpect(jsonPath("$.declaredDiseaseValidated").value(false))
                 .andExpect(jsonPath("$.completeness.modulesUnlocked").value(false))
                 .andExpect(jsonPath("$.completeness.missing[0]").value("ALLERGY_STATUS"))
-                .andExpect(jsonPath("$.completeness.missing.length()").value(4));
+                .andExpect(jsonPath("$.completeness.missing.length()").value(3));
     }
 
     @Test

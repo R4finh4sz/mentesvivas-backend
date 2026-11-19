@@ -1,5 +1,8 @@
 package com.mentesvivas.backend.service.auth;
 
+import com.mentesvivas.backend.entity.audit.AuditEventType;
+import com.mentesvivas.backend.entity.audit.AuditRecord;
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.config.PasswordRecoveryProperties;
 import com.mentesvivas.backend.dto.auth.CodeRequestedResponse;
 import com.mentesvivas.backend.dto.auth.ResetPasswordRequest;
@@ -27,10 +30,13 @@ public class PasswordRecoveryService {
     private final RefreshTokenService refreshTokenService;
     private final LoginLockoutService loginLockoutService;
     private final PasswordRecoveryProperties properties;
+    private final AuditTrail auditTrail;
 
     public CodeRequestedResponse requestRecovery(String email) {
-        userRepository.findByEmail(email).ifPresent(user ->
-                codeService.generate(passwordRecoveryPolicy, email).ifPresent(code -> emails.sendCode(email, code)));
+        userRepository.findByEmail(email).ifPresent(user -> {
+            codeService.generate(passwordRecoveryPolicy, email).ifPresent(code -> emails.sendCode(email, code));
+            auditTrail.record(AuditRecord.of(AuditEventType.PASSWORD_RECOVERY_REQUESTED, user.getId()));
+        });
         return new CodeRequestedResponse(REQUEST_MESSAGE, properties.codeValidity().toSeconds());
     }
 
@@ -43,6 +49,7 @@ public class PasswordRecoveryService {
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         refreshTokenService.revokeAll(user);
         loginLockoutService.release(request.email());
+        auditTrail.record(AuditRecord.of(AuditEventType.PASSWORD_RESET, user.getId()));
         emails.notifyPasswordChanged(user.getEmail());
     }
 }

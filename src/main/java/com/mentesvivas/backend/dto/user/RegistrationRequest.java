@@ -1,8 +1,11 @@
 package com.mentesvivas.backend.dto.user;
 
+import com.mentesvivas.backend.dto.address.AddressRequest;
+import com.mentesvivas.backend.dto.patient.EmergencyContactRequest;
 import com.mentesvivas.backend.entity.user.Role;
 import com.mentesvivas.backend.util.Normalization;
 import com.mentesvivas.backend.validation.StrongPassword;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -13,6 +16,7 @@ import jakarta.validation.constraints.Size;
 import org.hibernate.validator.constraints.br.CPF;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 
 public record RegistrationRequest(
@@ -29,7 +33,9 @@ public record RegistrationRequest(
         @AssertTrue(message = "e necessario consentir com o tratamento de dados de saude") boolean acceptHealthData,
         Integer privacyPolicyVersion,
         Integer specificConsentVersion,
-        @Size(max = 500) @Pattern(regexp = PhotoUrl.REGEX, message = PhotoUrl.MESSAGE) String photoUrl
+        @Size(max = 500) @Pattern(regexp = PhotoUrl.REGEX, message = PhotoUrl.MESSAGE) String photoUrl,
+        @NotNull @Valid AddressRequest address,
+        @Valid List<EmergencyContactRequest> emergencyContacts
 ) {
 
     public RegistrationRequest {
@@ -43,6 +49,28 @@ public record RegistrationRequest(
     @AssertTrue(message = "a confirmacao deve ser igual a senha")
     public boolean isPasswordConfirmationEqual() {
         return Objects.equals(password, passwordConfirmation);
+    }
+
+    @AssertTrue(message = "o paciente deve informar de dois a dez contatos de emergencia")
+    public boolean isEmergencyContactsCountValid() {
+        if (role != Role.PATIENT) {
+            return true;
+        }
+        return emergencyContacts != null && emergencyContacts.size() >= 2 && emergencyContacts.size() <= 10;
+    }
+
+    @AssertTrue(message = "a ordem de acionamento nao pode se repetir")
+    public boolean isEmergencyContactsOrderUnique() {
+        if (emergencyContacts == null) {
+            return true;
+        }
+        return emergencyContacts.stream().map(EmergencyContactRequest::order).distinct().count()
+                == emergencyContacts.size();
+    }
+
+    @AssertTrue(message = "o cuidador nao informa contatos de emergencia no cadastro")
+    public boolean isEmergencyContactsAllowedForRole() {
+        return role != Role.CAREGIVER || emergencyContacts == null || emergencyContacts.isEmpty();
     }
 
     @AssertTrue(message = "no aplicativo o cadastro e apenas de PACIENTE ou CUIDADOR")

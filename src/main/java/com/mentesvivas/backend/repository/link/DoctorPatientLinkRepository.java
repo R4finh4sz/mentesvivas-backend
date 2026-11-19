@@ -11,6 +11,8 @@ import java.util.UUID;
 
 public interface DoctorPatientLinkRepository extends JpaRepository<DoctorPatientLink, UUID> {
 
+    long countByStatus(LinkStatus status);
+
     boolean existsByDoctorIdAndPatientIdAndStatus(UUID doctorId, UUID patientId, LinkStatus status);
 
     Optional<DoctorPatientLink> findByDoctorIdAndPatientId(UUID doctorId, UUID patientId);
@@ -18,6 +20,8 @@ public interface DoctorPatientLinkRepository extends JpaRepository<DoctorPatient
     List<DoctorPatientLink> findByDoctorIdOrderByCreatedAtDesc(UUID doctorId);
 
     List<DoctorPatientLink> findByPatientIdOrderByCreatedAtDesc(UUID patientId);
+
+    List<DoctorPatientLink> findByPatientIdAndStatus(UUID patientId, LinkStatus status);
 
     List<DoctorPatientLink> findByPatientIdInOrderByCreatedAtDesc(Collection<UUID> patientIds);
 }
