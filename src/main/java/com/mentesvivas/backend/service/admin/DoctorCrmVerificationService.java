@@ -5,6 +5,7 @@ import com.mentesvivas.backend.entity.admin.AdminAction;
 import com.mentesvivas.backend.entity.admin.AdminActionType;
 import com.mentesvivas.backend.entity.user.Role;
 import com.mentesvivas.backend.entity.user.User;
+import com.mentesvivas.backend.exception.common.ConflictException;
 import com.mentesvivas.backend.exception.common.ResourceNotFoundException;
 import com.mentesvivas.backend.repository.admin.AdminActionRepository;
 import com.mentesvivas.backend.repository.user.UserRepository;
@@ -24,6 +25,7 @@ public class DoctorCrmVerificationService {
     private final UserRepository userRepository;
     private final AdminActionRepository actionRepository;
     private final CurrentUser currentUser;
+    private final CrmConfirmation crmConfirmation;
 
     @Transactional(readOnly = true)
     public List<PendingDoctorResponse> pending() {
@@ -40,6 +42,9 @@ public class DoctorCrmVerificationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Médico não encontrado."));
         if (doctor.isCrmVerified()) {
             return;
+        }
+        if (!crmConfirmation.confirms(doctor)) {
+            throw new ConflictException("Nao foi possivel confirmar o registro profissional do medico.");
         }
         doctor.setCrmVerified(true);
         actionRepository.save(new AdminAction(currentUser.get().getId(), doctor.getId(),
