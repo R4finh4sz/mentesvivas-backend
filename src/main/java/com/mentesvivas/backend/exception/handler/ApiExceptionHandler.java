@@ -2,6 +2,7 @@ package com.mentesvivas.backend.exception.handler;
 
 import com.mentesvivas.backend.exception.auth.AuthException;
 import com.mentesvivas.backend.exception.auth.InvalidCodeException;
+import com.mentesvivas.backend.exception.auth.AccountInactiveException;
 import com.mentesvivas.backend.exception.auth.AccountLockedException;
 import com.mentesvivas.backend.exception.auth.CodeSendLimitException;
 import com.mentesvivas.backend.exception.common.ServiceUnavailableException;
@@ -49,6 +50,11 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header(HttpHeaders.RETRY_AFTER, Long.toString(seconds))
                 .body(problem);
+    }
+
+    @ExceptionHandler(AccountInactiveException.class)
+    ProblemDetail handleAccountInactive(AccountInactiveException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
     @ExceptionHandler(CodeSendLimitException.class)

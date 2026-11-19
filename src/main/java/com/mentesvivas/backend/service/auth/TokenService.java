@@ -41,6 +41,10 @@ public class TokenService {
 
     @Transactional(noRollbackFor = InvalidSessionException.class)
     public TokenResponse renew(String refreshToken) {
-        return issue(refreshTokenService.consume(refreshToken));
+        User user = refreshTokenService.consume(refreshToken);
+        if (!user.isActive()) {
+            throw new InvalidSessionException();
+        }
+        return issue(user);
     }
 }

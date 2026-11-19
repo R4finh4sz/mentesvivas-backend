@@ -4,6 +4,7 @@ import com.mentesvivas.backend.entity.audit.AuditEventType;
 import com.mentesvivas.backend.entity.audit.AuditRecord;
 import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.entity.user.User;
+import com.mentesvivas.backend.exception.auth.AccountInactiveException;
 import com.mentesvivas.backend.exception.auth.InvalidCredentialsException;
 import com.mentesvivas.backend.repository.user.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,6 +43,9 @@ public class CredentialAuthenticator {
             throw new InvalidCredentialsException();
         }
         loginLockoutService.recordSuccess(email);
+        if (!user.get().isActive()) {
+            throw new AccountInactiveException();
+        }
         return user.get();
     }
 }
