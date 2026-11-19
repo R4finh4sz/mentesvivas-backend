@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Optional;
@@ -31,6 +32,10 @@ public class OneTimeCodeService {
         values.store(codeKey(policy, key), codeHash(key, code), policy.validity());
         counter.remove(attemptsKey(policy, key));
         return Optional.of(code);
+    }
+
+    public Duration remainingSendBlock(CodePolicy policy, String email) {
+        return counter.remainingTime(sendsKey(policy, hasher.hash(email))).orElse(policy.sendsWindow());
     }
 
     public void validateAndConsume(CodePolicy policy, String email, String code) {

@@ -3,6 +3,7 @@ package com.mentesvivas.backend.exception.handler;
 import com.mentesvivas.backend.exception.auth.AuthException;
 import com.mentesvivas.backend.exception.auth.InvalidCodeException;
 import com.mentesvivas.backend.exception.auth.AccountLockedException;
+import com.mentesvivas.backend.exception.auth.CodeSendLimitException;
 import com.mentesvivas.backend.exception.common.ServiceUnavailableException;
 import com.mentesvivas.backend.exception.patient.ImpossibleValueException;
 import com.mentesvivas.backend.exception.patient.ValueNeedsConfirmationException;
@@ -42,6 +43,16 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(AccountLockedException.class)
     ResponseEntity<ProblemDetail> handleAccountLocked(AccountLockedException ex) {
+        long seconds = Math.max(1, ex.getRemainingTime().toSeconds());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
+        problem.setProperty("retryAfterSeconds", seconds);
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, Long.toString(seconds))
+                .body(problem);
+    }
+
+    @ExceptionHandler(CodeSendLimitException.class)
+    ResponseEntity<ProblemDetail> handleCodeSendLimit(CodeSendLimitException ex) {
         long seconds = Math.max(1, ex.getRemainingTime().toSeconds());
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
         problem.setProperty("retryAfterSeconds", seconds);
