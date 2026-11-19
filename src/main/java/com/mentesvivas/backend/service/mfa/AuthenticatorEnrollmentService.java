@@ -1,7 +1,9 @@
 package com.mentesvivas.backend.service.mfa;
 
 import com.mentesvivas.backend.cache.TemporaryValue;
+import com.mentesvivas.backend.dto.mfa.AuthenticatorActivatedResponse;
 import com.mentesvivas.backend.dto.mfa.AuthenticatorSetupResponse;
+import com.mentesvivas.backend.dto.mfa.BackupCodesResponse;
 import com.mentesvivas.backend.dto.mfa.MfaStatusResponse;
 import com.mentesvivas.backend.entity.user.MfaMethod;
 import com.mentesvivas.backend.entity.user.User;
@@ -25,6 +27,8 @@ public class AuthenticatorEnrollmentService {
     private final SecretCipher cipher;
     private final TemporaryValue pendingSetups;
     private final AuthenticatorCodeVerifier verifier;
+    private final AuthenticatorCredentialVerifier credentialVerifier;
+    private final BackupCodeService backupCodes;
 
     @Transactional(readOnly = true)
     public MfaStatusResponse status() {
@@ -43,7 +47,7 @@ public class AuthenticatorEnrollmentService {
     }
 
     @Transactional
-    public MfaStatusResponse confirm(String code) {
+    public AuthenticatorActivatedResponse confirm(String code) {
         User user = currentUser.get();
         String encrypted = pendingSetups.get(setupKey(user))
                 .orElseThrow(() -> new ConflictException("Inicie a configuracao do aplicativo autenticador primeiro."));
@@ -51,7 +55,8 @@ public class AuthenticatorEnrollmentService {
         user.setTotpSecret(encrypted);
         user.setMfaMethod(MfaMethod.AUTHENTICATOR);
         pendingSetups.remove(setupKey(user));
-        return new MfaStatusResponse(user.getMfaMethod(), List.of(MfaMethod.values()));
+        return new AuthenticatorActivatedResponse(user.getMfaMethod(), List.of(MfaMethod.values()),
+                backupCodes.regenerate(user.getId()));
     }
 
     @Transactional
@@ -60,10 +65,21 @@ public class AuthenticatorEnrollmentService {
         if (user.getMfaMethod() != MfaMethod.AUTHENTICATOR || user.getTotpSecret() == null) {
             throw new ConflictException("O aplicativo autenticador nao esta ativo.");
         }
-        verifier.verify(user.getId(), cipher.decrypt(user.getTotpSecret()), code);
+        credentialVerifier.verify(user, code);
         user.setTotpSecret(null);
         user.setMfaMethod(MfaMethod.EMAIL);
+        backupCodes.clear(user.getId());
         return new MfaStatusResponse(user.getMfaMethod(), List.of(MfaMethod.values()));
+    }
+
+    @Transactional
+    public BackupCodesResponse regenerateBackupCodes(String code) {
+        User user = currentUser.get();
+        if (user.getMfaMethod() != MfaMethod.AUTHENTICATOR || user.getTotpSecret() == null) {
+            throw new ConflictException("O aplicativo autenticador nao esta ativo.");
+        }
+        credentialVerifier.verify(user, code);
+        return new BackupCodesResponse(backupCodes.regenerate(user.getId()));
     }
 
     private String setupKey(User user) {
