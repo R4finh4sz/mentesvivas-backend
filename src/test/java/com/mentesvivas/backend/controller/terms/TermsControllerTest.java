@@ -1,6 +1,7 @@
 package com.mentesvivas.backend.controller.terms;
 
 import com.jayway.jsonpath.JsonPath;
+import com.mentesvivas.backend.support.AdminTestSupport;
 import com.mentesvivas.backend.support.ClearTemporaryStorage;
 import com.mentesvivas.backend.support.TermsTestSupport;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,9 @@ class TermsControllerTest {
     private MockMvc mockMvc;
 
     @Autowired
+    private AdminTestSupport admin;
+
+    @Autowired
     private TermsTestSupport terms;
 
     @Test
@@ -41,7 +45,7 @@ class TermsControllerTest {
 
     @Test
     void adminPublishesNewVersionAndCurrentTermsArePublic() throws Exception {
-        String token = tokenOf(TermsTestSupport.ADMIN_EMAIL, TermsTestSupport.ADMIN_PASSWORD);
+        String token = admin.token();
 
         publish(token, "Termos v1").andExpect(status().isCreated()).andExpect(jsonPath("$.version").value(1));
         publish(token, "Termos v2").andExpect(status().isCreated()).andExpect(jsonPath("$.version").value(2));

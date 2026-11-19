@@ -1,6 +1,7 @@
 package com.mentesvivas.backend.controller.terms;
 
 import com.jayway.jsonpath.JsonPath;
+import com.mentesvivas.backend.support.AdminTestSupport;
 import com.mentesvivas.backend.support.ClearTemporaryStorage;
 import com.mentesvivas.backend.support.TermsTestSupport;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,13 +33,16 @@ class TermsTypesControllerTest {
     private MockMvc mockMvc;
 
     @Autowired
+    private AdminTestSupport admin;
+
+    @Autowired
     private TermsTestSupport terms;
 
     private String adminToken;
 
     @BeforeEach
     void setUp() throws Exception {
-        adminToken = tokenOf(TermsTestSupport.ADMIN_EMAIL, TermsTestSupport.ADMIN_PASSWORD);
+        adminToken = admin.token();
     }
 
     @Test
