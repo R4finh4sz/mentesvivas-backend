@@ -1,5 +1,8 @@
 package com.mentesvivas.backend.service.terms;
 
+import com.mentesvivas.backend.entity.audit.AuditEventType;
+import com.mentesvivas.backend.entity.audit.AuditRecord;
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.dto.terms.AcceptTermsRequest;
 import com.mentesvivas.backend.dto.terms.TermsAcceptanceResponse;
 import com.mentesvivas.backend.entity.terms.TermsAcceptance;
@@ -33,6 +36,7 @@ public class TermsAcceptanceService {
     private final TermsVersionRepository termsVersionRepository;
     private final TermsAcceptanceRepository termsAcceptanceRepository;
     private final CurrentUser currentUser;
+    private final AuditTrail auditTrail;
 
     public List<Integer> validateSignup(Role role, Map<TermsType, Integer> informedVersions) {
         List<Integer> versions = new ArrayList<>();
@@ -93,6 +97,11 @@ public class TermsAcceptanceService {
 
     private TermsAcceptance register(User user, Integer version) {
         return termsAcceptanceRepository.findByUserIdAndVersion(user.getId(), version)
-                .orElseGet(() -> termsAcceptanceRepository.save(new TermsAcceptance(user, version, Instant.now())));
+                .orElseGet(() -> {
+                    TermsAcceptance saved = termsAcceptanceRepository.save(new TermsAcceptance(user, version, Instant.now()));
+                    auditTrail.record(AuditRecord.of(AuditEventType.TERMS_ACCEPTED, user.getId())
+                            .withValues(null, "v" + version));
+                    return saved;
+                });
     }
 }

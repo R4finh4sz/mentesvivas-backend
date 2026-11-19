@@ -1,5 +1,8 @@
 package com.mentesvivas.backend.service.link;
 
+import com.mentesvivas.backend.entity.audit.AuditEventType;
+import com.mentesvivas.backend.entity.audit.AuditRecord;
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.dto.link.CaregiverLinkResponse;
 import com.mentesvivas.backend.entity.link.CaregiverPatientLink;
 import com.mentesvivas.backend.entity.link.InvitationKind;
@@ -37,6 +40,7 @@ public class CaregiverLinkService {
     private final PendingInvitationRepository pendingRepository;
     private final NotificationService notifications;
     private final LinkEmails emails;
+    private final AuditTrail auditTrail;
 
     @Transactional
     public void invite(String email) {
@@ -67,6 +71,7 @@ public class CaregiverLinkService {
         User patient = roles.require(Role.PATIENT);
         CaregiverPatientLink link = pendingLinkOf(linkId, patient);
         link.setStatus(LinkStatus.ACTIVE);
+        audit(AuditEventType.CAREGIVER_LINK_ACCEPTED, patient.getId(), link.getPatientId());
         notifications.notify(link.getCaregiverId(), NotificationType.LINK_ACCEPTED, link.getId(),
                 "%s aceitou seu convite de cuidador.".formatted(patient.getFullName()));
         return toResponse(link);
@@ -77,6 +82,7 @@ public class CaregiverLinkService {
         User patient = roles.require(Role.PATIENT);
         CaregiverPatientLink link = pendingLinkOf(linkId, patient);
         link.setStatus(LinkStatus.DECLINED);
+        audit(AuditEventType.CAREGIVER_LINK_DECLINED, patient.getId(), link.getPatientId());
         notifications.notify(link.getCaregiverId(), NotificationType.LINK_DECLINED, link.getId(),
                 "%s recusou seu convite de cuidador.".formatted(patient.getFullName()));
         return toResponse(link);
@@ -95,6 +101,7 @@ public class CaregiverLinkService {
             throw new ConflictException("Este vinculo ja foi encerrado ou recusado.");
         }
         link.setStatus(LinkStatus.ENDED);
+        audit(AuditEventType.CAREGIVER_LINK_ENDED, caller.getId(), link.getPatientId());
         UUID other = isCaregiver ? link.getPatientId() : link.getCaregiverId();
         notifications.notify(other, NotificationType.LINK_ENDED, link.getId(),
                 "%s encerrou o vinculo de cuidado.".formatted(caller.getFullName()));
@@ -120,9 +127,14 @@ public class CaregiverLinkService {
         }
         link.setStatus(LinkStatus.PENDING);
         CaregiverPatientLink saved = linkRepository.save(link);
+        audit(AuditEventType.CAREGIVER_LINK_INVITED, caregiver.getId(), patient.getId());
         notifications.notify(patient.getId(), NotificationType.CAREGIVER_INVITATION, saved.getId(),
                 "%s convidou voce para ser seu cuidador.".formatted(caregiver.getFullName()));
         emails.inviteRegistered(patient.getEmail());
+    }
+
+    private void audit(AuditEventType type, UUID actorId, UUID patientId) {
+        auditTrail.record(AuditRecord.of(type, actorId).forPatient(patientId));
     }
 
     private CaregiverPatientLink pendingLinkOf(UUID linkId, User patient) {

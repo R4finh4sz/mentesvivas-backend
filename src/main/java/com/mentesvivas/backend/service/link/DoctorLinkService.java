@@ -1,5 +1,8 @@
 package com.mentesvivas.backend.service.link;
 
+import com.mentesvivas.backend.entity.audit.AuditEventType;
+import com.mentesvivas.backend.entity.audit.AuditRecord;
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.dto.link.DoctorLinkResponse;
 import com.mentesvivas.backend.dto.link.RequestDoctorLinkRequest;
 import com.mentesvivas.backend.entity.link.CaregiverPatientLink;
@@ -43,6 +46,7 @@ public class DoctorLinkService {
     private final PendingInvitationRepository pendingRepository;
     private final NotificationService notifications;
     private final LinkEmails emails;
+    private final AuditTrail auditTrail;
 
     @Transactional
     public DoctorLinkResponse request(RequestDoctorLinkRequest request) {
@@ -55,6 +59,7 @@ public class DoctorLinkService {
         DoctorPatientLink link = startLink(doctor, patient, caller);
         link.setPatientAuthorized(caller.getRole() == Role.PATIENT);
         DoctorPatientLink saved = linkRepository.save(link);
+        audit(AuditEventType.DOCTOR_LINK_REQUESTED, caller.getId(), patient.getId());
 
         notifications.notify(doctor.getId(), NotificationType.DOCTOR_LINK_REQUEST, saved.getId(),
                 "%s pediu vinculo com voce.".formatted(patient.getFullName()));
@@ -96,6 +101,7 @@ public class DoctorLinkService {
     public DoctorLinkResponse accept(UUID linkId) {
         User caller = currentUser.get();
         DoctorPatientLink link = pendingLinkOf(linkId, caller);
+        audit(AuditEventType.DOCTOR_LINK_ACCEPTED, caller.getId(), link.getPatientId());
         if (caller.getId().equals(link.getDoctorId())) {
             link.setDoctorConfirmed(true);
         } else {
@@ -114,6 +120,7 @@ public class DoctorLinkService {
         User caller = currentUser.get();
         DoctorPatientLink link = pendingLinkOf(linkId, caller);
         link.setStatus(LinkStatus.DECLINED);
+        audit(AuditEventType.DOCTOR_LINK_DECLINED, caller.getId(), link.getPatientId());
         notifyOthers(link, caller, NotificationType.LINK_DECLINED,
                 "%s recusou o vinculo entre medico e paciente.".formatted(caller.getFullName()));
         return toResponse(link);
@@ -128,6 +135,7 @@ public class DoctorLinkService {
             throw new ConflictException("Este vinculo ja foi encerrado ou recusado.");
         }
         link.setStatus(LinkStatus.ENDED);
+        audit(AuditEventType.DOCTOR_LINK_ENDED, caller.getId(), link.getPatientId());
         notifyOthers(link, caller, NotificationType.LINK_ENDED,
                 "%s encerrou o vinculo entre medico e paciente.".formatted(caller.getFullName()));
         return toResponse(link);
@@ -145,6 +153,10 @@ public class DoctorLinkService {
         return links.stream().map(this::toResponse).toList();
     }
 
+    private void audit(AuditEventType type, UUID actorId, UUID patientId) {
+        auditTrail.record(AuditRecord.of(type, actorId).forPatient(patientId));
+    }
+
     private void invite(User doctor, User patient) {
         DoctorPatientLink link = startLinkOrNull(doctor, patient, doctor);
         if (link == null) {
@@ -153,6 +165,7 @@ public class DoctorLinkService {
         link.setDoctorConfirmed(true);
         link.setPatientAuthorized(false);
         DoctorPatientLink saved = linkRepository.save(link);
+        audit(AuditEventType.DOCTOR_LINK_INVITED, doctor.getId(), patient.getId());
         notifications.notify(patient.getId(), NotificationType.DOCTOR_INVITATION, saved.getId(),
                 "%s convidou voce para se vincular como seu medico.".formatted(doctor.getFullName()));
         emails.inviteRegistered(patient.getEmail());

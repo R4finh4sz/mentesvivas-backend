@@ -1,5 +1,8 @@
 package com.mentesvivas.backend.service.terms;
 
+import com.mentesvivas.backend.entity.audit.AuditEventType;
+import com.mentesvivas.backend.entity.audit.AuditRecord;
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.dto.terms.PublishTermsRequest;
 import com.mentesvivas.backend.dto.terms.TermsResponse;
 import com.mentesvivas.backend.entity.terms.TermsAudience;
@@ -26,6 +29,7 @@ public class TermsService {
 
     private final TermsVersionRepository termsVersionRepository;
     private final CurrentUser currentUser;
+    private final AuditTrail auditTrail;
 
     public TermsResponse current(TermsType type, Role role) {
         TermsType wanted = type == null ? TermsType.TERMS_OF_USE : type;
@@ -71,6 +75,9 @@ public class TermsService {
         TermsVersion terms = new TermsVersion(nextVersion, request.typeOrDefault(), request.audienceOrDefault(),
                 request.roles(), request.title().strip(), request.content(),
                 currentUser.get().getId(), Instant.now());
-        return TermsMapper.toResponse(termsVersionRepository.saveAndFlush(terms));
+        TermsVersion saved = termsVersionRepository.saveAndFlush(terms);
+        auditTrail.record(AuditRecord.of(AuditEventType.TERMS_PUBLISHED, saved.getPublishedBy())
+                .withValues(null, "%s v%d".formatted(saved.getType(), saved.getVersion())));
+        return TermsMapper.toResponse(saved);
     }
 }

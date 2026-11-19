@@ -1,5 +1,8 @@
 package com.mentesvivas.backend.service.admin;
 
+import com.mentesvivas.backend.entity.audit.AuditEventType;
+import com.mentesvivas.backend.entity.audit.AuditRecord;
+import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.dto.admin.PendingDoctorResponse;
 import com.mentesvivas.backend.entity.admin.AdminAction;
 import com.mentesvivas.backend.entity.admin.AdminActionType;
@@ -26,6 +29,7 @@ public class DoctorCrmVerificationService {
     private final AdminActionRepository actionRepository;
     private final CurrentUser currentUser;
     private final CrmConfirmation crmConfirmation;
+    private final AuditTrail auditTrail;
 
     @Transactional(readOnly = true)
     public List<PendingDoctorResponse> pending() {
@@ -49,5 +53,7 @@ public class DoctorCrmVerificationService {
         doctor.setCrmVerified(true);
         actionRepository.save(new AdminAction(currentUser.get().getId(), doctor.getId(),
                 AdminActionType.CRM_VERIFIED, Instant.now()));
+        auditTrail.record(AuditRecord.of(AuditEventType.CRM_VERIFIED, currentUser.get().getId())
+                .withValues("false", "true").forPatient(null));
     }
 }
