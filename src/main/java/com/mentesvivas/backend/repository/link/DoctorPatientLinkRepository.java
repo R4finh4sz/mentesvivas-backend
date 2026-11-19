@@ -19,5 +19,7 @@ public interface DoctorPatientLinkRepository extends JpaRepository<DoctorPatient
 
     List<DoctorPatientLink> findByPatientIdOrderByCreatedAtDesc(UUID patientId);
 
+    List<DoctorPatientLink> findByPatientIdAndStatus(UUID patientId, LinkStatus status);
+
     List<DoctorPatientLink> findByPatientIdInOrderByCreatedAtDesc(Collection<UUID> patientIds);
 }
