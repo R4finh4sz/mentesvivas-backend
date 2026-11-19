@@ -10,6 +10,8 @@ import java.util.UUID;
 
 public interface CaregiverPatientLinkRepository extends JpaRepository<CaregiverPatientLink, UUID> {
 
+    long countByStatus(LinkStatus status);
+
     boolean existsByCaregiverIdAndPatientIdAndStatus(UUID caregiverId, UUID patientId, LinkStatus status);
 
     Optional<CaregiverPatientLink> findByCaregiverIdAndPatientId(UUID caregiverId, UUID patientId);

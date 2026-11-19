@@ -11,6 +11,8 @@ import java.util.UUID;
 
 public interface DoctorPatientLinkRepository extends JpaRepository<DoctorPatientLink, UUID> {
 
+    long countByStatus(LinkStatus status);
+
     boolean existsByDoctorIdAndPatientIdAndStatus(UUID doctorId, UUID patientId, LinkStatus status);
 
     Optional<DoctorPatientLink> findByDoctorIdAndPatientId(UUID doctorId, UUID patientId);
