@@ -34,9 +34,13 @@ public class EmergencyContactService {
 
     @Transactional
     public List<EmergencyContactResponse> replace(ReplaceEmergencyContactsRequest request) {
-        User patient = currentPatient.get();
+        return replaceFor(currentPatient.get(), request.contacts());
+    }
+
+    @Transactional
+    public List<EmergencyContactResponse> replaceFor(User patient, List<EmergencyContactRequest> contacts) {
         repository.deleteAllByPatientId(patient.getId());
-        List<EmergencyContact> saved = repository.saveAll(request.contacts().stream()
+        List<EmergencyContact> saved = repository.saveAll(contacts.stream()
                 .map(contact -> toEntity(patient.getId(), contact))
                 .toList());
         changeRecorder.record(patient.getId(), SensitiveField.EMERGENCY_CONTACTS, ChangeType.REPLACED,

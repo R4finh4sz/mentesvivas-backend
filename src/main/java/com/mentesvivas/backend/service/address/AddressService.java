@@ -30,7 +30,11 @@ public class AddressService {
 
     @Transactional
     public AddressResponse save(AddressRequest request) {
-        User user = currentUser.get();
+        return saveFor(currentUser.get(), request);
+    }
+
+    @Transactional
+    public AddressResponse saveFor(User user, AddressRequest request) {
         Address address = addressRepository.findByUserId(user.getId()).orElseGet(() -> {
             Address created = new Address();
             created.setUser(user);
