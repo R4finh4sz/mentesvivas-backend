@@ -9,9 +9,9 @@ import java.util.Set;
 @Component
 public class TwoFactorRequirement {
 
-    private static final Set<Role> ROLES_WITH_CLINICAL_ACCESS = Set.of(Role.DOCTOR);
+    private static final Set<Role> ROLES_REQUIRING_SECOND_FACTOR = Set.of(Role.DOCTOR, Role.ADMINISTRATOR);
 
     public boolean isRequiredFor(User user) {
-        return ROLES_WITH_CLINICAL_ACCESS.contains(user.getRole());
+        return ROLES_REQUIRING_SECOND_FACTOR.contains(user.getRole());
     }
 }
