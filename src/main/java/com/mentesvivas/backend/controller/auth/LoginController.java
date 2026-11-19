@@ -7,6 +7,7 @@ import com.mentesvivas.backend.dto.auth.TokenResponse;
 import com.mentesvivas.backend.dto.auth.VerifyTwoFactorRequest;
 import com.mentesvivas.backend.service.auth.LoginService;
 import com.mentesvivas.backend.service.auth.TokenService;
+import com.mentesvivas.backend.service.auth.TwoFactorRecoveryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
@@ -23,6 +24,7 @@ public class LoginController {
 
     private final LoginService loginService;
     private final TokenService tokenService;
+    private final TwoFactorRecoveryService twoFactorRecoveryService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest body) {
@@ -36,6 +38,12 @@ public class LoginController {
     @PostMapping("/2fa/verify")
     public ResponseEntity<TokenResponse> verifyTwoFactor(@Valid @RequestBody VerifyTwoFactorRequest body) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(loginService.verifyTwoFactor(body));
+    }
+
+    @PostMapping("/2fa/recover")
+    public ResponseEntity<?> recoverTwoFactor(@Valid @RequestBody LoginRequest body) {
+        return ResponseEntity.accepted().cacheControl(CacheControl.noStore())
+                .body(twoFactorRecoveryService.recoverWithEmail(body));
     }
 
     @PostMapping("/refresh")
