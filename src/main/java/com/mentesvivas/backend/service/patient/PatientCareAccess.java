@@ -13,7 +13,7 @@ import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
-public class VitalSignAccess {
+public class PatientCareAccess {
 
     private final CurrentUser currentUser;
     private final CaregiverPatientAccess caregiverAccess;
@@ -27,7 +27,7 @@ public class VitalSignAccess {
         if (user.getRole() == Role.CAREGIVER) {
             return caregiverAccess.requireRepresentativeOf(patientId);
         }
-        throw new AccessDeniedException("Seu perfil nao registra afericoes.");
+        throw new AccessDeniedException("Seu perfil nao registra dados de cuidado.");
     }
 
     public User requireReader(UUID patientId) {
@@ -39,7 +39,7 @@ public class VitalSignAccess {
 
     private User requireSelf(User user, UUID patientId) {
         if (!user.getId().equals(patientId)) {
-            throw new AccessDeniedException("Voce so acessa as suas proprias afericoes.");
+            throw new AccessDeniedException("Voce so acessa os seus proprios dados de cuidado.");
         }
         return user;
     }

@@ -23,7 +23,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class VitalSignService {
 
-    private final VitalSignAccess access;
+    private final PatientCareAccess access;
     private final VitalSignRepository repository;
     private final VitalSignValidator validator;
     private final AccessLog accessLog;
