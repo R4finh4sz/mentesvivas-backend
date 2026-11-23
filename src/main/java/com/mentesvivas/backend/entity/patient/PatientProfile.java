@@ -35,6 +35,8 @@ public class PatientProfile {
     @Column(nullable = false)
     private boolean declaredDiseaseValidated;
 
+    private Integer hydrationGoalMl;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private AllergyStatus allergyStatus = AllergyStatus.NOT_INFORMED;

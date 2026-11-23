@@ -42,6 +42,7 @@ public class SensitiveChangeRecorder {
             case ALLERGY_STATUS -> AuditEventType.ALLERGY_STATUS_CHANGED;
             case DECLARED_DISEASE -> AuditEventType.DECLARED_DISEASE_CHANGED;
             case EMERGENCY_CONTACTS -> AuditEventType.EMERGENCY_CONTACTS_REPLACED;
+            case HYDRATION_GOAL -> AuditEventType.HYDRATION_GOAL_CHANGED;
         };
     }
 }
