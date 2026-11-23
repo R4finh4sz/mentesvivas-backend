@@ -18,7 +18,7 @@ public class DoctorPatientAccess {
     private final CurrentUser currentUser;
     private final DoctorPatientLinkRepository linkRepository;
 
-    public User requireDoctorOf(UUID patientId) {
+    public User requireDoctor() {
         User doctor = currentUser.get();
         if (doctor.getRole() != Role.DOCTOR) {
             throw new AccessDeniedException("Acesso restrito a medicos.");
@@ -26,6 +26,11 @@ public class DoctorPatientAccess {
         if (!doctor.isCrmVerified()) {
             throw new AccessDeniedException("O registro profissional ainda nao foi conferido.");
         }
+        return doctor;
+    }
+
+    public User requireDoctorOf(UUID patientId) {
+        User doctor = requireDoctor();
         if (!linkRepository.existsByDoctorIdAndPatientIdAndStatus(doctor.getId(), patientId, LinkStatus.ACTIVE)) {
             throw new AccessDeniedException("Voce nao tem vinculo ativo com este paciente.");
         }
