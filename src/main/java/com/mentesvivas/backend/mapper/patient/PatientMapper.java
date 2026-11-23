@@ -74,6 +74,7 @@ public final class PatientMapper {
 
     public static ExamResponse toResponse(Exam exam) {
         return new ExamResponse(exam.getId(), exam.getCategory(), exam.getFileType(), exam.getTitle(),
-                exam.getFileUrl(), exam.getExamDate(), exam.getNotes(), exam.getUploadedBy(), exam.getCreatedAt());
+                exam.getFileName(), exam.getContentType(), exam.getSizeBytes(), exam.getExamDate(), exam.getNotes(),
+                exam.getUploadedBy(), exam.getCreatedAt());
     }
 }
