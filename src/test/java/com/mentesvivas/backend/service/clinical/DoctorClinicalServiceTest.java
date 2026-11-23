@@ -2,6 +2,7 @@ package com.mentesvivas.backend.service.clinical;
 
 import com.mentesvivas.backend.service.audit.AccessLog;
 import com.mentesvivas.backend.dto.clinical.DeclareDiseaseRequest;
+import com.mentesvivas.backend.dto.clinical.DefineHydrationGoalRequest;
 import com.mentesvivas.backend.dto.patient.AddAllergyRequest;
 import com.mentesvivas.backend.dto.patient.SetAllergyStatusRequest;
 import com.mentesvivas.backend.entity.patient.Allergy;
@@ -184,5 +185,27 @@ class DoctorClinicalServiceTest {
                 .isInstanceOf(AccessDeniedException.class);
         verify(allergyRepository, never()).save(any());
         verify(changeRecorder, never()).record(any(), any(), any(), anyString(), any());
+    }
+
+    @Test
+    void definingTheHydrationGoalStoresItAndRecordsTheChange() {
+        when(profileLoader.getOrCreate(PATIENT)).thenReturn(profile);
+
+        service.defineHydrationGoal(PATIENT, new DefineHydrationGoalRequest(1500));
+
+        assertThat(profile.getHydrationGoalMl()).isEqualTo(1500);
+        verify(changeRecorder).record(eq(PATIENT), eq(SensitiveField.HYDRATION_GOAL), eq(ChangeType.CREATED),
+                anyString(), eq(doctor.getId()), eq(null), eq("1500"));
+    }
+
+    @Test
+    void changingTheHydrationGoalKeepsTheBeforeValue() {
+        profile.setHydrationGoalMl(1500);
+        when(profileLoader.getOrCreate(PATIENT)).thenReturn(profile);
+
+        service.defineHydrationGoal(PATIENT, new DefineHydrationGoalRequest(1800));
+
+        verify(changeRecorder).record(eq(PATIENT), eq(SensitiveField.HYDRATION_GOAL), eq(ChangeType.UPDATED),
+                anyString(), eq(doctor.getId()), eq("1500"), eq("1800"));
     }
 }
