@@ -3,6 +3,7 @@ package com.mentesvivas.backend.mapper.patient;
 import com.mentesvivas.backend.dto.patient.AllergyResponse;
 import com.mentesvivas.backend.dto.patient.EmergencyContactResponse;
 import com.mentesvivas.backend.dto.patient.MeasurementResponse;
+import com.mentesvivas.backend.dto.patient.OccurrenceResponse;
 import com.mentesvivas.backend.dto.patient.SensitiveChangeResponse;
 import com.mentesvivas.backend.dto.patient.RoutineRecordResponse;
 import com.mentesvivas.backend.dto.patient.VitalSignResponse;
@@ -10,6 +11,7 @@ import com.mentesvivas.backend.entity.patient.Allergy;
 import com.mentesvivas.backend.entity.patient.BodyMeasurement;
 import com.mentesvivas.backend.entity.patient.EmergencyContact;
 import com.mentesvivas.backend.entity.patient.MeasurementSource;
+import com.mentesvivas.backend.entity.patient.Occurrence;
 import com.mentesvivas.backend.entity.patient.SensitiveDataChange;
 import com.mentesvivas.backend.entity.patient.RoutineRecord;
 import com.mentesvivas.backend.entity.patient.VitalSign;
@@ -52,5 +54,11 @@ public final class PatientMapper {
                 record.getStoolFrequency(), record.getBristolScale(), record.getNotes(), record.getSource(),
                 record.getSource() == MeasurementSource.OCR, record.getRecordedBy(), record.getOccurredAt(),
                 record.getRecordedAt());
+    }
+
+    public static OccurrenceResponse toResponse(Occurrence occurrence) {
+        return new OccurrenceResponse(occurrence.getId(), occurrence.getType(), occurrence.getSeverity(),
+                occurrence.getDescription(), occurrence.isNeedsHospital(), occurrence.getSource(),
+                occurrence.getRecordedBy(), occurrence.getOccurredAt());
     }
 }
