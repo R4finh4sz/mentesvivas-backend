@@ -4,12 +4,14 @@ import com.mentesvivas.backend.dto.patient.AllergyResponse;
 import com.mentesvivas.backend.dto.patient.EmergencyContactResponse;
 import com.mentesvivas.backend.dto.patient.MeasurementResponse;
 import com.mentesvivas.backend.dto.patient.SensitiveChangeResponse;
+import com.mentesvivas.backend.dto.patient.RoutineRecordResponse;
 import com.mentesvivas.backend.dto.patient.VitalSignResponse;
 import com.mentesvivas.backend.entity.patient.Allergy;
 import com.mentesvivas.backend.entity.patient.BodyMeasurement;
 import com.mentesvivas.backend.entity.patient.EmergencyContact;
 import com.mentesvivas.backend.entity.patient.MeasurementSource;
 import com.mentesvivas.backend.entity.patient.SensitiveDataChange;
+import com.mentesvivas.backend.entity.patient.RoutineRecord;
 import com.mentesvivas.backend.entity.patient.VitalSign;
 
 public final class PatientMapper {
@@ -41,5 +43,14 @@ public final class PatientMapper {
                 sign.getGlucose(), sign.getGlucoseType(), sign.getTemperature(), sign.getOxygenSaturation(),
                 sign.getNotes(), sign.getSource(), sign.getSource() == MeasurementSource.OCR, sign.getRecordedBy(),
                 sign.getMeasuredAt());
+    }
+
+    public static RoutineRecordResponse toResponse(RoutineRecord record) {
+        return new RoutineRecordResponse(record.getId(), record.getType(), record.getMood(), record.getSleepQuality(),
+                record.getSleepHours(), record.getMealPeriod(), record.getMealAccepted(), record.getAmountMl(),
+                record.getBathCooperation(), record.getUrineFrequency(), record.getUrineAspect(),
+                record.getStoolFrequency(), record.getBristolScale(), record.getNotes(), record.getSource(),
+                record.getSource() == MeasurementSource.OCR, record.getRecordedBy(), record.getOccurredAt(),
+                record.getRecordedAt());
     }
 }
