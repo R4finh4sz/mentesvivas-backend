@@ -7,12 +7,14 @@ import com.mentesvivas.backend.entity.patient.PatientProfile;
 import com.mentesvivas.backend.entity.user.User;
 import com.mentesvivas.backend.exception.common.ResourceNotFoundException;
 import com.mentesvivas.backend.mapper.patient.PatientMapper;
+import com.mentesvivas.backend.repository.medication.MedicationRepository;
 import com.mentesvivas.backend.repository.patient.AllergyRepository;
 import com.mentesvivas.backend.repository.patient.BodyMeasurementRepository;
 import com.mentesvivas.backend.repository.patient.EmergencyContactRepository;
 import com.mentesvivas.backend.repository.patient.PatientProfileRepository;
 import com.mentesvivas.backend.repository.user.UserRepository;
 import com.mentesvivas.backend.service.audit.AccessLog;
+import com.mentesvivas.backend.service.medication.MedicationResponseFactory;
 import com.mentesvivas.backend.service.patient.CareTeamLoader;
 import com.mentesvivas.backend.util.BodyMassIndex;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -32,6 +35,8 @@ public class ClinicalSummaryService {
     private final AllergyRepository allergyRepository;
     private final BodyMeasurementRepository measurementRepository;
     private final EmergencyContactRepository contactRepository;
+    private final MedicationRepository medicationRepository;
+    private final MedicationResponseFactory medicationFactory;
     private final CareTeamLoader careTeamLoader;
     private final AccessLog accessLog;
 
@@ -39,6 +44,7 @@ public class ClinicalSummaryService {
     public ClinicalSummaryResponse summarize(UUID patientId) {
         User doctor = access.requireDoctorOf(patientId);
         accessLog.record(doctor.getId(), patientId, PatientDataArea.PROFILE);
+        accessLog.record(doctor.getId(), patientId, PatientDataArea.MEDICATIONS);
 
         User patient = userRepository.findById(patientId)
                 .orElseThrow(() -> new ResourceNotFoundException("Paciente nao encontrado."));
@@ -60,6 +66,8 @@ public class ClinicalSummaryService {
                 profile == null ? AllergyStatus.NOT_INFORMED : profile.getAllergyStatus(),
                 allergyRepository.findByPatientIdOrderByCreatedAtAsc(patientId).stream()
                         .map(PatientMapper::toResponse).toList(),
+                medicationRepository.findByPatientIdAndActiveTrueOrderByNameAsc(patientId).stream()
+                        .map(medication -> medicationFactory.create(medication, List.of())).toList(),
                 contactRepository.findByPatientIdOrderByContactOrderAsc(patientId).stream()
                         .map(PatientMapper::toResponse).toList(),
                 careTeamLoader.load(patientId));

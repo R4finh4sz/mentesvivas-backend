@@ -120,8 +120,7 @@ class ClinicalRecordControllerTest {
         as(doctor, "/summary").andExpect(status().isOk());
 
         mockMvc.perform(get("/api/patients/me/access-log").header("Authorization", bearer(patient.token())))
-                .andExpect(jsonPath("$.items.length()").value(1))
-                .andExpect(jsonPath("$.items[0].area").value("PROFILE"))
+                .andExpect(jsonPath("$.items[*].area", org.hamcrest.Matchers.containsInAnyOrder("PROFILE", "MEDICATIONS")))
                 .andExpect(jsonPath("$.items[0].accessorId").value(doctor.id().toString()));
     }
 
