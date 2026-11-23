@@ -38,7 +38,7 @@ class VitalSignServiceTest {
     private static final Instant NOW = Instant.parse("2026-11-23T12:00:00Z");
 
     @Mock
-    private VitalSignAccess access;
+    private PatientCareAccess access;
     @Mock
     private VitalSignRepository repository;
     @Mock

@@ -20,7 +20,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class VitalSignAccessTest {
+class PatientCareAccessTest {
 
     private static final UUID PATIENT = UUID.randomUUID();
 
@@ -31,11 +31,11 @@ class VitalSignAccessTest {
     @Mock
     private DoctorPatientAccess doctorAccess;
 
-    private VitalSignAccess access;
+    private PatientCareAccess access;
 
     @BeforeEach
     void setUp() {
-        access = new VitalSignAccess(currentUser, caregiverAccess, doctorAccess);
+        access = new PatientCareAccess(currentUser, caregiverAccess, doctorAccess);
     }
 
     private User user(Role role, UUID id) {

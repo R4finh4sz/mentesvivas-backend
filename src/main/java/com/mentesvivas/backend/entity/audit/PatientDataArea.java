@@ -5,6 +5,7 @@ public enum PatientDataArea {
     ALLERGIES,
     DECLARED_DISEASE,
     MEASUREMENTS,
+    ROUTINE,
     EMERGENCY_CONTACTS,
     DOCUMENTS
 }
