@@ -9,5 +9,6 @@ public enum PatientDataArea {
     OCCURRENCES,
     MEDICATIONS,
     EMERGENCY_CONTACTS,
-    DOCUMENTS
+    DOCUMENTS,
+    APPOINTMENTS
 }
