@@ -1,5 +1,6 @@
 package com.mentesvivas.backend.service.patient;
 
+import com.mentesvivas.backend.config.ExamProperties;
 import com.mentesvivas.backend.dto.patient.UploadExamRequest;
 import com.mentesvivas.backend.entity.audit.PatientDataArea;
 import com.mentesvivas.backend.entity.patient.Exam;
@@ -10,13 +11,17 @@ import com.mentesvivas.backend.exception.common.ResourceNotFoundException;
 import com.mentesvivas.backend.exception.patient.ImpossibleValueException;
 import com.mentesvivas.backend.repository.patient.ExamRepository;
 import com.mentesvivas.backend.service.audit.AccessLog;
+import com.mentesvivas.backend.service.patient.exam.ExamFileInspector;
+import com.mentesvivas.backend.service.patient.exam.ExamFileStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.util.unit.DataSize;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -38,11 +43,14 @@ class ExamServiceTest {
     private static final UUID PATIENT = UUID.randomUUID();
     private static final Instant NOW = Instant.parse("2026-11-23T12:00:00Z");
     private static final LocalDate TODAY = LocalDate.of(2026, 11, 23);
+    private static final byte[] PDF = "%PDF-1.7 conteudo".getBytes(StandardCharsets.US_ASCII);
 
     @Mock
     private PatientCareAccess access;
     @Mock
     private ExamRepository repository;
+    @Mock
+    private ExamFileStore fileStore;
     @Mock
     private AccessLog accessLog;
 
@@ -51,22 +59,31 @@ class ExamServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ExamService(access, repository, accessLog, Clock.fixed(NOW, ZoneOffset.UTC));
+        service = newService(DataSize.ofMegabytes(10));
         actor = new User();
         actor.setId(UUID.randomUUID());
     }
 
+    private ExamService newService(DataSize limit) {
+        return new ExamService(access, repository, fileStore, new ExamFileInspector(), accessLog,
+                new ExamProperties(limit), Clock.fixed(NOW, ZoneOffset.UTC));
+    }
+
     private UploadExamRequest request(LocalDate date) {
-        return new UploadExamRequest(ExamCategory.BLOOD, ExamFileType.PDF, "  Hemograma  ",
-                " https://arquivos.exemplo.com/hemograma.pdf ", date, "  ");
+        return new UploadExamRequest(ExamCategory.BLOOD, "  Hemograma  ", date, "  ");
     }
 
     @Test
-    void uploadSavesTheExamWithTheAuthorAndTrimmedFields() {
+    void uploadSavesTheExamAndTheFile() {
+        UUID examId = UUID.randomUUID();
         when(access.requireWriter(PATIENT)).thenReturn(actor);
-        when(repository.save(any(Exam.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(repository.save(any(Exam.class))).thenAnswer(invocation -> {
+            Exam exam = invocation.getArgument(0);
+            exam.setId(examId);
+            return exam;
+        });
 
-        var response = service.upload(PATIENT, request(TODAY));
+        var response = service.upload(PATIENT, request(TODAY), "laudo.pdf", PDF);
 
         ArgumentCaptor<Exam> saved = ArgumentCaptor.forClass(Exam.class);
         verify(repository).save(saved.capture());
@@ -74,17 +91,58 @@ class ExamServiceTest {
         assertThat(saved.getValue().getUploadedBy()).isEqualTo(actor.getId());
         assertThat(saved.getValue().getCreatedAt()).isEqualTo(NOW);
         assertThat(saved.getValue().getTitle()).isEqualTo("Hemograma");
-        assertThat(saved.getValue().getFileUrl()).isEqualTo("https://arquivos.exemplo.com/hemograma.pdf");
         assertThat(saved.getValue().getNotes()).isNull();
-        assertThat(response.category()).isEqualTo(ExamCategory.BLOOD);
+        assertThat(saved.getValue().getFileName()).isEqualTo("laudo.pdf");
+        assertThat(saved.getValue().getSizeBytes()).isEqualTo(PDF.length);
         assertThat(response.fileType()).isEqualTo(ExamFileType.PDF);
+        assertThat(response.contentType()).isEqualTo("application/pdf");
+        verify(fileStore).save(examId, PDF);
+    }
+
+    @Test
+    void fileNameLosesTheClientPathAndFallsBackWhenEmpty() {
+        when(access.requireWriter(PATIENT)).thenReturn(actor);
+        when(repository.save(any(Exam.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        assertThat(service.upload(PATIENT, request(TODAY), "C:\\Users\\ana\\laudo.pdf", PDF).fileName())
+                .isEqualTo("laudo.pdf");
+        assertThat(service.upload(PATIENT, request(TODAY), null, PDF).fileName()).isEqualTo("exame");
     }
 
     @Test
     void futureExamDateIsRejected() {
         when(access.requireWriter(PATIENT)).thenReturn(actor);
 
-        assertThatThrownBy(() -> service.upload(PATIENT, request(TODAY.plusDays(1))))
+        assertThatThrownBy(() -> service.upload(PATIENT, request(TODAY.plusDays(1)), "a.pdf", PDF))
+                .isInstanceOf(ImpossibleValueException.class);
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void emptyFileIsRejected() {
+        when(access.requireWriter(PATIENT)).thenReturn(actor);
+
+        assertThatThrownBy(() -> service.upload(PATIENT, request(TODAY), "a.pdf", new byte[0]))
+                .isInstanceOf(ImpossibleValueException.class);
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void fileAboveTheConfiguredLimitIsRejected() {
+        service = newService(DataSize.ofBytes(PDF.length - 1));
+        when(access.requireWriter(PATIENT)).thenReturn(actor);
+
+        assertThatThrownBy(() -> service.upload(PATIENT, request(TODAY), "a.pdf", PDF))
+                .isInstanceOf(ImpossibleValueException.class);
+        verify(fileStore, never()).save(any(), any());
+    }
+
+    @Test
+    void unsupportedContentIsRejectedEvenWithAPdfName() {
+        when(access.requireWriter(PATIENT)).thenReturn(actor);
+
+        assertThatThrownBy(() -> service.upload(PATIENT, request(TODAY), "a.pdf",
+                "<html></html>".getBytes(StandardCharsets.US_ASCII)))
                 .isInstanceOf(ImpossibleValueException.class);
         verify(repository, never()).save(any());
     }
@@ -109,15 +167,51 @@ class ExamServiceTest {
     }
 
     @Test
-    void deleteRemovesTheExam() {
+    void downloadReturnsTheFileAndLogsTheAccess() {
+        Exam exam = exam();
+        when(access.requireReader(PATIENT)).thenReturn(actor);
+        when(repository.findByIdAndPatientId(exam.getId(), PATIENT)).thenReturn(Optional.of(exam));
+        when(fileStore.find(exam.getId())).thenReturn(Optional.of(PDF));
+
+        var file = service.download(PATIENT, exam.getId());
+
+        assertThat(file.fileName()).isEqualTo("laudo.pdf");
+        assertThat(file.contentType()).isEqualTo("application/pdf");
+        assertThat(file.content()).isEqualTo(PDF);
+        verify(accessLog).record(actor.getId(), PATIENT, PatientDataArea.DOCUMENTS);
+    }
+
+    @Test
+    void downloadOfUnknownExamIsNotFound() {
         UUID id = UUID.randomUUID();
-        Exam existing = new Exam();
+        when(access.requireReader(PATIENT)).thenReturn(actor);
+        when(repository.findByIdAndPatientId(id, PATIENT)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.download(PATIENT, id)).isInstanceOf(ResourceNotFoundException.class);
+        verify(accessLog, never()).record(any(), any(), any());
+    }
+
+    @Test
+    void downloadWithoutStoredFileIsNotFound() {
+        Exam exam = exam();
+        when(access.requireReader(PATIENT)).thenReturn(actor);
+        when(repository.findByIdAndPatientId(exam.getId(), PATIENT)).thenReturn(Optional.of(exam));
+        when(fileStore.find(exam.getId())).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.download(PATIENT, exam.getId()))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void deleteRemovesTheFileAndTheExam() {
+        Exam exam = exam();
         when(access.requireWriter(PATIENT)).thenReturn(actor);
-        when(repository.findByIdAndPatientId(id, PATIENT)).thenReturn(Optional.of(existing));
+        when(repository.findByIdAndPatientId(exam.getId(), PATIENT)).thenReturn(Optional.of(exam));
 
-        service.delete(PATIENT, id);
+        service.delete(PATIENT, exam.getId());
 
-        verify(repository).delete(existing);
+        verify(fileStore).delete(exam.getId());
+        verify(repository).delete(exam);
     }
 
     @Test
@@ -128,5 +222,14 @@ class ExamServiceTest {
 
         assertThatThrownBy(() -> service.delete(PATIENT, id)).isInstanceOf(ResourceNotFoundException.class);
         verify(repository, never()).delete(any());
+        verify(fileStore, never()).delete(any());
+    }
+
+    private Exam exam() {
+        Exam exam = new Exam();
+        exam.setId(UUID.randomUUID());
+        exam.setFileName("laudo.pdf");
+        exam.setContentType("application/pdf");
+        return exam;
     }
 }
