@@ -3,6 +3,7 @@ package com.mentesvivas.backend.mapper.patient;
 import com.mentesvivas.backend.dto.patient.AllergyResponse;
 import com.mentesvivas.backend.dto.patient.AppointmentResponse;
 import com.mentesvivas.backend.dto.patient.EmergencyContactResponse;
+import com.mentesvivas.backend.dto.patient.ExamResponse;
 import com.mentesvivas.backend.dto.patient.MeasurementResponse;
 import com.mentesvivas.backend.dto.patient.OccurrenceResponse;
 import com.mentesvivas.backend.dto.patient.SensitiveChangeResponse;
@@ -12,6 +13,7 @@ import com.mentesvivas.backend.entity.patient.Allergy;
 import com.mentesvivas.backend.entity.patient.Appointment;
 import com.mentesvivas.backend.entity.patient.BodyMeasurement;
 import com.mentesvivas.backend.entity.patient.EmergencyContact;
+import com.mentesvivas.backend.entity.patient.Exam;
 import com.mentesvivas.backend.entity.patient.MeasurementSource;
 import com.mentesvivas.backend.entity.patient.Occurrence;
 import com.mentesvivas.backend.entity.patient.SensitiveDataChange;
@@ -68,5 +70,11 @@ public final class PatientMapper {
         return new AppointmentResponse(appointment.getId(), appointment.getType(), appointment.getTitle(),
                 appointment.getLocation(), appointment.getNotes(), appointment.getScheduledAt(),
                 appointment.getRemindAt(), appointment.getCreatedBy());
+    }
+
+    public static ExamResponse toResponse(Exam exam) {
+        return new ExamResponse(exam.getId(), exam.getCategory(), exam.getFileType(), exam.getTitle(),
+                exam.getFileName(), exam.getContentType(), exam.getSizeBytes(), exam.getExamDate(), exam.getNotes(),
+                exam.getUploadedBy(), exam.getCreatedAt());
     }
 }
