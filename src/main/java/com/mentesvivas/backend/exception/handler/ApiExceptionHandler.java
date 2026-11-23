@@ -7,6 +7,7 @@ import com.mentesvivas.backend.exception.auth.AccountLockedException;
 import com.mentesvivas.backend.exception.auth.CodeSendLimitException;
 import com.mentesvivas.backend.exception.common.ServiceUnavailableException;
 import com.mentesvivas.backend.exception.patient.ImpossibleValueException;
+import com.mentesvivas.backend.exception.patient.IncompletePrescriptionException;
 import com.mentesvivas.backend.exception.patient.ValueNeedsConfirmationException;
 import com.mentesvivas.backend.exception.common.ConflictException;
 import com.mentesvivas.backend.exception.common.ResourceNotFoundException;
@@ -82,6 +83,13 @@ public class ApiExceptionHandler {
     @ExceptionHandler(ImpossibleValueException.class)
     ProblemDetail handleImpossibleValue(ImpossibleValueException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(IncompletePrescriptionException.class)
+    ProblemDetail handleIncompletePrescription(IncompletePrescriptionException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setProperty("missingFields", ex.getMissingFields());
+        return problem;
     }
 
     @ExceptionHandler(ValueNeedsConfirmationException.class)
