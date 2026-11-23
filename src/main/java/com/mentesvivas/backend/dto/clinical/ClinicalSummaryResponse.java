@@ -1,5 +1,6 @@
 package com.mentesvivas.backend.dto.clinical;
 
+import com.mentesvivas.backend.dto.medication.MedicationResponse;
 import com.mentesvivas.backend.dto.patient.AllergyResponse;
 import com.mentesvivas.backend.dto.patient.CareTeamResponse;
 import com.mentesvivas.backend.dto.patient.EmergencyContactResponse;
@@ -26,6 +27,7 @@ public record ClinicalSummaryResponse(
         boolean declaredDiseaseValidated,
         AllergyStatus allergyStatus,
         List<AllergyResponse> allergies,
+        List<MedicationResponse> medications,
         List<EmergencyContactResponse> emergencyContacts,
         CareTeamResponse careTeam
 ) {
