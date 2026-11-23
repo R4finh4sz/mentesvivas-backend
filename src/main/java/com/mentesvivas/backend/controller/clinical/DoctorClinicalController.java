@@ -1,6 +1,7 @@
 package com.mentesvivas.backend.controller.clinical;
 
 import com.mentesvivas.backend.dto.clinical.DeclareDiseaseRequest;
+import com.mentesvivas.backend.dto.clinical.DefineHydrationGoalRequest;
 import com.mentesvivas.backend.dto.patient.AddAllergyRequest;
 import com.mentesvivas.backend.dto.patient.AllergyResponse;
 import com.mentesvivas.backend.dto.patient.AllergyStatusResponse;
@@ -55,5 +56,12 @@ public class DoctorClinicalController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void validateDisease(@PathVariable UUID patientId, @Valid @RequestBody DeclareDiseaseRequest body) {
         service.validateDisease(patientId, body);
+    }
+
+    @PutMapping("/hydration-goal")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void defineHydrationGoal(@PathVariable UUID patientId,
+                                    @Valid @RequestBody DefineHydrationGoalRequest body) {
+        service.defineHydrationGoal(patientId, body);
     }
 }

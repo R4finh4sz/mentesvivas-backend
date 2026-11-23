@@ -3,6 +3,7 @@ package com.mentesvivas.backend.service.clinical;
 import com.mentesvivas.backend.entity.audit.PatientDataArea;
 import com.mentesvivas.backend.service.audit.AccessLog;
 import com.mentesvivas.backend.dto.clinical.DeclareDiseaseRequest;
+import com.mentesvivas.backend.dto.clinical.DefineHydrationGoalRequest;
 import com.mentesvivas.backend.dto.patient.AddAllergyRequest;
 import com.mentesvivas.backend.dto.patient.AllergyResponse;
 import com.mentesvivas.backend.dto.patient.SetAllergyStatusRequest;
@@ -106,6 +107,19 @@ public class DoctorClinicalService {
         profile.setDeclaredDiseaseValidated(true);
         changeRecorder.record(patientId, SensitiveField.DECLARED_DISEASE, ChangeType.UPDATED,
                 "Doenca registrada e validada pelo medico", doctor.getId(), before, request.disease());
+    }
+
+    @Transactional
+    public void defineHydrationGoal(UUID patientId, DefineHydrationGoalRequest request) {
+        User doctor = access.requireDoctorOf(patientId);
+        accessLog.record(doctor.getId(), patientId, PatientDataArea.ROUTINE);
+        PatientProfile profile = profileLoader.getOrCreate(patientId);
+        Integer before = profile.getHydrationGoalMl();
+        profile.setHydrationGoalMl(request.goalMl());
+        changeRecorder.record(patientId, SensitiveField.HYDRATION_GOAL,
+                before == null ? ChangeType.CREATED : ChangeType.UPDATED,
+                "Meta hidrica definida pelo medico", doctor.getId(),
+                before == null ? null : String.valueOf(before), String.valueOf(request.goalMl()));
     }
 
     private String describe(Allergy allergy) {
