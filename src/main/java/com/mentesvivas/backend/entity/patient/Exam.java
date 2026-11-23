@@ -41,8 +41,14 @@ public class Exam {
     @Column(nullable = false, length = 120)
     private String title;
 
-    @Column(nullable = false, length = 500)
-    private String fileUrl;
+    @Column(nullable = false, length = 255)
+    private String fileName;
+
+    @Column(nullable = false, length = 20)
+    private String contentType;
+
+    @Column(nullable = false)
+    private long sizeBytes;
 
     @Column(nullable = false)
     private LocalDate examDate;
