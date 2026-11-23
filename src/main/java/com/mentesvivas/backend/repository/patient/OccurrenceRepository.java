@@ -4,6 +4,7 @@ import com.mentesvivas.backend.entity.patient.Occurrence;
 import com.mentesvivas.backend.entity.patient.OccurrenceType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,4 +19,6 @@ public interface OccurrenceRepository extends JpaRepository<Occurrence, UUID> {
 
     List<Occurrence> findByPatientIdAndTypeAndDescriptionContainingIgnoreCaseOrderByOccurredAtDesc(
             UUID patientId, OccurrenceType type, String keyword);
+
+    List<Occurrence> findByPatientIdAndOccurredAtBetweenOrderByOccurredAtDesc(UUID patientId, Instant from, Instant to);
 }

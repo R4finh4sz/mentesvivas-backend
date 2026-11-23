@@ -3,6 +3,7 @@ package com.mentesvivas.backend.repository.patient;
 import com.mentesvivas.backend.entity.patient.BodyMeasurement;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -14,4 +15,7 @@ public interface BodyMeasurementRepository extends JpaRepository<BodyMeasurement
     Optional<BodyMeasurement> findFirstByPatientIdAndWeightKgIsNotNullOrderByMeasuredAtDesc(UUID patientId);
 
     Optional<BodyMeasurement> findFirstByPatientIdAndHeightMIsNotNullOrderByMeasuredAtDesc(UUID patientId);
+
+    List<BodyMeasurement> findByPatientIdAndWeightKgIsNotNullAndMeasuredAtBetweenOrderByMeasuredAtDesc(
+            UUID patientId, Instant from, Instant to);
 }
