@@ -2,6 +2,8 @@ package com.mentesvivas.backend.service.clinical;
 
 import com.mentesvivas.backend.dto.patient.CareTeamResponse;
 import com.mentesvivas.backend.entity.audit.PatientDataArea;
+import com.mentesvivas.backend.dto.medication.MedicationResponse;
+import com.mentesvivas.backend.entity.medication.Medication;
 import com.mentesvivas.backend.entity.patient.Allergy;
 import com.mentesvivas.backend.entity.patient.AllergyCategory;
 import com.mentesvivas.backend.entity.patient.AllergySeverity;
@@ -11,12 +13,14 @@ import com.mentesvivas.backend.entity.patient.BodyMeasurement;
 import com.mentesvivas.backend.entity.patient.PatientProfile;
 import com.mentesvivas.backend.entity.user.User;
 import com.mentesvivas.backend.exception.common.ResourceNotFoundException;
+import com.mentesvivas.backend.repository.medication.MedicationRepository;
 import com.mentesvivas.backend.repository.patient.AllergyRepository;
 import com.mentesvivas.backend.repository.patient.BodyMeasurementRepository;
 import com.mentesvivas.backend.repository.patient.EmergencyContactRepository;
 import com.mentesvivas.backend.repository.patient.PatientProfileRepository;
 import com.mentesvivas.backend.repository.user.UserRepository;
 import com.mentesvivas.backend.service.audit.AccessLog;
+import com.mentesvivas.backend.service.medication.MedicationResponseFactory;
 import com.mentesvivas.backend.service.patient.CareTeamLoader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,6 +61,10 @@ class ClinicalSummaryServiceTest {
     @Mock
     private EmergencyContactRepository contactRepository;
     @Mock
+    private MedicationRepository medicationRepository;
+    @Mock
+    private MedicationResponseFactory medicationFactory;
+    @Mock
     private CareTeamLoader careTeamLoader;
     @Mock
     private AccessLog accessLog;
@@ -68,7 +76,8 @@ class ClinicalSummaryServiceTest {
     @BeforeEach
     void setUp() {
         service = new ClinicalSummaryService(access, userRepository, profileRepository, allergyRepository,
-                measurementRepository, contactRepository, careTeamLoader, accessLog);
+                measurementRepository, contactRepository, medicationRepository, medicationFactory, careTeamLoader,
+                accessLog);
         doctor = new User();
         doctor.setId(UUID.randomUUID());
         patient = new User();
@@ -117,6 +126,27 @@ class ClinicalSummaryServiceTest {
         assertThat(summary.weightKg()).isEqualByComparingTo("72.5");
         assertThat(summary.bmi()).isNotNull();
         verify(accessLog).record(doctor.getId(), PATIENT, PatientDataArea.PROFILE);
+    }
+
+    @Test
+    void listsOnlyTheActiveMedicationsAndLogsTheArea() {
+        when(userRepository.findById(PATIENT)).thenReturn(Optional.of(patient));
+        when(profileRepository.findById(PATIENT)).thenReturn(Optional.empty());
+        when(allergyRepository.findByPatientIdOrderByCreatedAtAsc(PATIENT)).thenReturn(List.of());
+        when(contactRepository.findByPatientIdOrderByContactOrderAsc(PATIENT)).thenReturn(List.of());
+        when(measurementRepository.findFirstByPatientIdAndWeightKgIsNotNullOrderByMeasuredAtDesc(PATIENT))
+                .thenReturn(Optional.empty());
+        when(measurementRepository.findFirstByPatientIdAndHeightMIsNotNullOrderByMeasuredAtDesc(PATIENT))
+                .thenReturn(Optional.empty());
+        Medication medication = new Medication();
+        MedicationResponse response = org.mockito.Mockito.mock(MedicationResponse.class);
+        when(medicationRepository.findByPatientIdAndActiveTrueOrderByNameAsc(PATIENT)).thenReturn(List.of(medication));
+        when(medicationFactory.create(medication, List.of())).thenReturn(response);
+
+        var summary = service.summarize(PATIENT);
+
+        assertThat(summary.medications()).containsExactly(response);
+        verify(accessLog).record(doctor.getId(), PATIENT, PatientDataArea.MEDICATIONS);
     }
 
     @Test
