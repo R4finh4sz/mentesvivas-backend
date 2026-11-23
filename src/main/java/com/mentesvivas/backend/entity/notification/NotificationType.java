@@ -6,5 +6,6 @@ public enum NotificationType {
     DOCTOR_INVITATION,
     LINK_ACCEPTED,
     LINK_DECLINED,
-    LINK_ENDED
+    LINK_ENDED,
+    SOS_ALERT
 }
