@@ -4,10 +4,13 @@ import com.mentesvivas.backend.dto.patient.AllergyResponse;
 import com.mentesvivas.backend.dto.patient.EmergencyContactResponse;
 import com.mentesvivas.backend.dto.patient.MeasurementResponse;
 import com.mentesvivas.backend.dto.patient.SensitiveChangeResponse;
+import com.mentesvivas.backend.dto.patient.VitalSignResponse;
 import com.mentesvivas.backend.entity.patient.Allergy;
 import com.mentesvivas.backend.entity.patient.BodyMeasurement;
 import com.mentesvivas.backend.entity.patient.EmergencyContact;
+import com.mentesvivas.backend.entity.patient.MeasurementSource;
 import com.mentesvivas.backend.entity.patient.SensitiveDataChange;
+import com.mentesvivas.backend.entity.patient.VitalSign;
 
 public final class PatientMapper {
 
@@ -31,5 +34,12 @@ public final class PatientMapper {
     public static SensitiveChangeResponse toResponse(SensitiveDataChange change) {
         return new SensitiveChangeResponse(change.getField(), change.getChangeType(), change.getSummary(),
                 change.getChangedBy(), change.getChangedAt());
+    }
+
+    public static VitalSignResponse toResponse(VitalSign sign) {
+        return new VitalSignResponse(sign.getId(), sign.getSystolic(), sign.getDiastolic(), sign.getHeartRate(),
+                sign.getGlucose(), sign.getGlucoseType(), sign.getTemperature(), sign.getOxygenSaturation(),
+                sign.getNotes(), sign.getSource(), sign.getSource() == MeasurementSource.OCR, sign.getRecordedBy(),
+                sign.getMeasuredAt());
     }
 }
