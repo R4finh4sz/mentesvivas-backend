@@ -26,7 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -43,7 +42,7 @@ public class MedicationService {
     private final AllergyRepository allergyRepository;
     private final PatientProfileRepository profileRepository;
     private final MedicationAllergyChecker allergyChecker;
-    private final MedicationStockCalculator stockCalculator;
+    private final MedicationResponseFactory responseFactory;
     private final AccessLog accessLog;
     private final Clock clock;
 
@@ -64,7 +63,7 @@ public class MedicationService {
         medication.setActive(true);
         medication.setCreatedBy(author.getId());
         medication.setCreatedAt(clock.instant());
-        return toResponse(repository.save(medication), warnings);
+        return responseFactory.create(repository.save(medication), warnings);
     }
 
     @Transactional
@@ -74,7 +73,7 @@ public class MedicationService {
         List<Medication> medications = includeInactive
                 ? repository.findByPatientIdOrderByNameAsc(patientId)
                 : repository.findByPatientIdAndActiveTrueOrderByNameAsc(patientId);
-        return medications.stream().map(medication -> toResponse(medication, List.of())).toList();
+        return medications.stream().map(medication -> responseFactory.create(medication, List.of())).toList();
     }
 
     @Transactional
@@ -84,7 +83,7 @@ public class MedicationService {
         adjustmentRepository.save(new StockAdjustment(medication.getId(), medication.getStockQuantity(),
                 request.quantity(), request.justification().strip(), author.getId(), clock.instant()));
         medication.setStockQuantity(request.quantity());
-        return toResponse(medication, List.of());
+        return responseFactory.create(medication, List.of());
     }
 
     @Transactional
@@ -133,14 +132,5 @@ public class MedicationService {
             warnings.add(MedicationWarning.ALLERGY_NOT_INFORMED);
         }
         return warnings;
-    }
-
-    private MedicationResponse toResponse(Medication medication, List<MedicationWarning> warnings) {
-        List<LocalTime> times = medication.getTimes().stream().sorted().toList();
-        return new MedicationResponse(medication.getId(), medication.getName(), medication.getStrength(),
-                medication.getUnitsPerDose(), times, medication.getStockQuantity(),
-                stockCalculator.daysLeft(medication), stockCalculator.isCritical(medication),
-                medication.getOrigin(), medication.isActive(), medication.getCreatedBy(),
-                medication.getCreatedAt(), warnings);
     }
 }
