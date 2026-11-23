@@ -20,4 +20,7 @@ public interface RoutineRecordRepository extends JpaRepository<RoutineRecord, UU
             + " and r.type = com.mentesvivas.backend.entity.patient.RoutineType.HYDRATION"
             + " and r.occurredAt >= :from and r.occurredAt < :to")
     long sumHydrationMl(@Param("patientId") UUID patientId, @Param("from") Instant from, @Param("to") Instant to);
+
+    List<RoutineRecord> findByPatientIdAndTypeAndOccurredAtBetweenOrderByOccurredAtDesc(
+            UUID patientId, RoutineType type, Instant from, Instant to);
 }
