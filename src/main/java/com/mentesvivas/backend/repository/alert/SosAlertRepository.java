@@ -14,5 +14,7 @@ public interface SosAlertRepository extends JpaRepository<SosAlert, UUID> {
 
     List<SosAlert> findByPatientIdAndStatusOrderByCreatedAtDesc(UUID patientId, AlertStatus status);
 
+    List<SosAlert> findByPatientIdAndStatusNotOrderByCreatedAtDesc(UUID patientId, AlertStatus status);
+
     Optional<SosAlert> findByIdAndPatientId(UUID id, UUID patientId);
 }
