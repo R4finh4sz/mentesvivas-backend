@@ -1,6 +1,7 @@
 package com.mentesvivas.backend.mapper.patient;
 
 import com.mentesvivas.backend.dto.patient.AllergyResponse;
+import com.mentesvivas.backend.dto.patient.AppointmentResponse;
 import com.mentesvivas.backend.dto.patient.EmergencyContactResponse;
 import com.mentesvivas.backend.dto.patient.MeasurementResponse;
 import com.mentesvivas.backend.dto.patient.OccurrenceResponse;
@@ -8,6 +9,7 @@ import com.mentesvivas.backend.dto.patient.SensitiveChangeResponse;
 import com.mentesvivas.backend.dto.patient.RoutineRecordResponse;
 import com.mentesvivas.backend.dto.patient.VitalSignResponse;
 import com.mentesvivas.backend.entity.patient.Allergy;
+import com.mentesvivas.backend.entity.patient.Appointment;
 import com.mentesvivas.backend.entity.patient.BodyMeasurement;
 import com.mentesvivas.backend.entity.patient.EmergencyContact;
 import com.mentesvivas.backend.entity.patient.MeasurementSource;
@@ -60,5 +62,11 @@ public final class PatientMapper {
         return new OccurrenceResponse(occurrence.getId(), occurrence.getType(), occurrence.getSeverity(),
                 occurrence.getDescription(), occurrence.isNeedsHospital(), occurrence.getSource(),
                 occurrence.getRecordedBy(), occurrence.getOccurredAt());
+    }
+
+    public static AppointmentResponse toResponse(Appointment appointment) {
+        return new AppointmentResponse(appointment.getId(), appointment.getType(), appointment.getTitle(),
+                appointment.getLocation(), appointment.getNotes(), appointment.getScheduledAt(),
+                appointment.getRemindAt(), appointment.getCreatedBy());
     }
 }
