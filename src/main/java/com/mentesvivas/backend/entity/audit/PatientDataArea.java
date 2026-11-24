@@ -12,5 +12,6 @@ public enum PatientDataArea {
     DOCUMENTS,
     APPOINTMENTS,
     ALERTS,
-    PRESCRIPTIONS
+    PRESCRIPTIONS,
+    GAME_PERFORMANCE
 }
