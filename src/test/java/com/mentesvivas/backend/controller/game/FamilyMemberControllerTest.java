@@ -4,6 +4,7 @@ import com.jayway.jsonpath.JsonPath;
 import com.mentesvivas.backend.support.ClearTemporaryStorage;
 import com.mentesvivas.backend.support.LinkTestSupport;
 import com.mentesvivas.backend.support.LinkTestSupport.Account;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,7 +16,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
+
 import static com.mentesvivas.backend.support.AuthTestSupport.bearer;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -32,6 +38,8 @@ class FamilyMemberControllerTest {
     private MockMvc mockMvc;
     @Autowired
     private LinkTestSupport accounts;
+    @Autowired
+    private EntityManager entityManager;
 
     private Account patient;
     private Account caregiver;
@@ -144,7 +152,7 @@ class FamilyMemberControllerTest {
 
     @Test
     void removingAnUnknownPersonReturnsNotFound() throws Exception {
-        mockMvc.perform(delete(path() + "/" + java.util.UUID.randomUUID())
+        mockMvc.perform(delete(path() + "/" + UUID.randomUUID())
                 .header("Authorization", bearer(caregiver.token())))
                 .andExpect(status().isNotFound());
     }
@@ -152,5 +160,68 @@ class FamilyMemberControllerTest {
     @Test
     void strangerCannotSeeTheGallery() throws Exception {
         gallery(stranger).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void recognitionRetriesThenCompletesAndKeepsMetricsPrivate() throws Exception {
+        String sessions = "/api/care/patients/" + patient.id() + "/games/family-recognition/sessions";
+        String token = bearer(patient.token());
+        mockMvc.perform(post(sessions).header("Authorization", token)).andExpect(status().isConflict());
+
+        var membersByPhoto = new HashMap<String, String>();
+        for (String name : List.of("Ana", "Bia", "Caio", "Davi")) {
+            String photo = "https://img/" + name + ".png";
+            String member = register(caregiver, """
+                    {"name":"%s","kinship":"filha","photoUrl":"%s","audioUrl":"https://audio/%s.mp3"}
+                    """.formatted(name, photo, name)).andExpect(status().isCreated())
+                    .andReturn().getResponse().getContentAsString();
+            membersByPhoto.put(photo, JsonPath.read(member, "$.id"));
+        }
+
+        mockMvc.perform(post(sessions).header("Authorization", bearer(stranger.token())))
+                .andExpect(status().isForbidden());
+        String first = mockMvc.perform(post(sessions).header("Authorization", token))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.options.length()").value(4))
+                .andExpect(jsonPath("$.audioUrl").doesNotExist()).andReturn().getResponse().getContentAsString();
+        String sessionId = JsonPath.read(first, "$.sessionId");
+        String photo = JsonPath.read(first, "$.photoUrl");
+        String session = sessions + "/" + sessionId;
+        entityManager.flush();
+        entityManager.clear();
+        mockMvc.perform(get(session + "/question").header("Authorization", token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.photoUrl").value(photo));
+
+        String correct = membersByPhoto.get(photo);
+        List<String> options = JsonPath.read(first, "$.options[*].id");
+        String wrong = options.stream().filter(id -> !id.equals(correct)).findFirst().orElseThrow();
+        answer(session, token, 1, wrong).andExpect(status().isOk())
+                .andExpect(jsonPath("$.correct").value(false)).andExpect(jsonPath("$.audioUrl").isEmpty())
+                .andExpect(jsonPath("$.nextQuestion.position").value(1))
+                .andExpect(jsonPath("$.nextQuestion.errors").doesNotExist());
+
+        for (int position = 1; position <= 4; position++) {
+            String audio = photo.replace("https://img/", "https://audio/").replace(".png", ".mp3");
+            String response = answer(session, token, position, membersByPhoto.get(photo)).andExpect(status().isOk())
+                    .andExpect(jsonPath("$.correct").value(true)).andExpect(jsonPath("$.audioUrl").value(audio))
+                    .andExpect(jsonPath("$.finished").value(position == 4))
+                    .andReturn().getResponse().getContentAsString();
+            if (position < 4) {
+                answer(session, token, position, membersByPhoto.get(photo)).andExpect(status().isConflict());
+                photo = JsonPath.read(response, "$.nextQuestion.photoUrl");
+            }
+        }
+        mockMvc.perform(get(session + "/question").header("Authorization", token)).andExpect(status().isConflict());
+        entityManager.flush();
+        Object[] metrics = (Object[]) entityManager.createNativeQuery("""
+                SELECT errors, response_ms FROM recognition_questions WHERE session_id = :id AND position = 0
+                """).setParameter("id", UUID.fromString(sessionId)).getSingleResult();
+        assertThat(metrics[0]).isEqualTo(1);
+        assertThat(metrics[1]).isNotNull();
+    }
+
+    private ResultActions answer(String session, String token, int position, String memberId) throws Exception {
+        return mockMvc.perform(post(session + "/answers").header("Authorization", token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"position\":%d,\"memberId\":\"%s\"}".formatted(position, memberId)));
     }
 }
