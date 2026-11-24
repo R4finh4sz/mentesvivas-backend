@@ -113,6 +113,21 @@ class DoseServiceTest {
     }
 
     @Test
+    void replayOfAnOfflineOperationReturnsTheStoredDoseWithoutDiscountingStock() {
+        UUID operationId = UUID.randomUUID();
+        DoseRecord original = stored(DoseStatus.TAKEN, author.getId(), NOW, "2");
+        when(repository.findByMedicationIdAndRecordedByAndClientOperationId(
+                medication.getId(), author.getId(), operationId)).thenReturn(Optional.of(original));
+
+        var response = service.record(PATIENT, medication.getId(),
+                new RecordDoseRequest(SLOT, DoseStatus.TAKEN, operationId));
+
+        assertThat(response.id()).isEqualTo(original.getId());
+        assertThat(medication.getStockQuantity()).isEqualByComparingTo("10");
+        verify(repository, never()).save(any());
+    }
+
+    @Test
     void stockNeverGoesNegative() {
         medication.setStockQuantity(new BigDecimal("1"));
 

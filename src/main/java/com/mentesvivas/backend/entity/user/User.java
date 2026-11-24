@@ -63,6 +63,8 @@ public class User {
 
     private Instant healthDataConsentedAt;
 
+    private Instant healthDataConsentRevokedAt;
+
     @Column(length = 500)
     private String photoUrl;
 

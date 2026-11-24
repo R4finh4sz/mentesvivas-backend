@@ -1,6 +1,7 @@
 package com.mentesvivas.backend.dto.alert;
 
 import com.mentesvivas.backend.entity.alert.AlertStatus;
+import com.mentesvivas.backend.entity.notification.NotificationType;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -16,6 +17,9 @@ public record AlertResponse(
         UUID acknowledgedBy,
         Instant resolvedAt,
         UUID resolvedBy,
-        String notice
+        String notice,
+        NotificationType type,
+        UUID sourceId,
+        UUID createdBy
 ) {
 }

@@ -13,6 +13,7 @@ public final class AlertMapper {
     public static AlertResponse toResponse(SosAlert alert) {
         return new AlertResponse(alert.getId(), alert.getPatientId(), alert.getStatus(), alert.getCreatedAt(),
                 alert.getSeenAt(), alert.getSeenBy(), alert.getAcknowledgedAt(), alert.getAcknowledgedBy(),
-                alert.getResolvedAt(), alert.getResolvedBy(), NOTICE);
+                alert.getResolvedAt(), alert.getResolvedBy(), NOTICE,
+                alert.getType(), alert.getSourceId(), alert.getCreatedBy());
     }
 }

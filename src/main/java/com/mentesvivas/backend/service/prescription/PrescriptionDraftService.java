@@ -20,6 +20,7 @@ import com.mentesvivas.backend.repository.prescription.PrescriptionRepository;
 import com.mentesvivas.backend.service.audit.AccessLog;
 import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.service.clinical.DoctorPatientAccess;
+import com.mentesvivas.backend.security.HealthDataConsentAccess;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,7 @@ import java.util.UUID;
 public class PrescriptionDraftService {
 
     private final DoctorPatientAccess doctorAccess;
+    private final HealthDataConsentAccess healthConsent;
     private final PrescriptionRepository repository;
     private final PrescriptionItemRepository itemRepository;
     private final AllergyRepository allergyRepository;
@@ -110,6 +112,7 @@ public class PrescriptionDraftService {
         Prescription prescription = repository.findByIdAndDoctorId(prescriptionId, doctor.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Receita nao encontrada."));
         doctorAccess.requireDoctorOf(prescription.getPatientId());
+        healthConsent.requireActive(prescription.getPatientId());
         return prescription;
     }
 

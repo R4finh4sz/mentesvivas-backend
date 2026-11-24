@@ -4,6 +4,7 @@ import com.mentesvivas.backend.dto.patient.AgitationProtocolResponse;
 import com.mentesvivas.backend.dto.patient.OccurrenceResponse;
 import com.mentesvivas.backend.dto.patient.RecordOccurrenceRequest;
 import com.mentesvivas.backend.entity.audit.PatientDataArea;
+import com.mentesvivas.backend.entity.notification.NotificationType;
 import com.mentesvivas.backend.entity.patient.MeasurementSource;
 import com.mentesvivas.backend.entity.patient.Occurrence;
 import com.mentesvivas.backend.entity.patient.OccurrenceType;
@@ -11,6 +12,7 @@ import com.mentesvivas.backend.entity.user.User;
 import com.mentesvivas.backend.exception.patient.ImpossibleValueException;
 import com.mentesvivas.backend.mapper.patient.PatientMapper;
 import com.mentesvivas.backend.repository.patient.OccurrenceRepository;
+import com.mentesvivas.backend.service.alert.CriticalAlertService;
 import com.mentesvivas.backend.service.audit.AccessLog;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,7 @@ public class OccurrenceService {
     private final AccessLog accessLog;
     private final Clock clock;
     private final AgitationProtocolService protocols;
+    private final CriticalAlertService alerts;
 
     @Transactional
     public OccurrenceResponse record(UUID patientId, RecordOccurrenceRequest request) {
@@ -53,7 +56,12 @@ public class OccurrenceService {
         if (protocol != null) {
             occurrence.setAgitationProtocolId(protocol.id());
         }
-        return PatientMapper.toResponse(repository.save(occurrence), protocol);
+        Occurrence saved = repository.save(occurrence);
+        if (saved.getType() == OccurrenceType.FALL) {
+            alerts.create(patientId, author.getId(), NotificationType.FALL_ALERT, saved.getId(),
+                    "Foi registrada uma queda do paciente.");
+        }
+        return PatientMapper.toResponse(saved, protocol);
     }
 
     @Transactional

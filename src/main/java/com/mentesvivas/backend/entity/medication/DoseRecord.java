@@ -54,4 +54,6 @@ public class DoseRecord {
 
     @Column(nullable = false)
     private Instant recordedAt;
+
+    private UUID clientOperationId;
 }

@@ -4,7 +4,6 @@ import com.mentesvivas.backend.dto.patient.ClinicalRangePolicyResponse;
 import com.mentesvivas.backend.dto.patient.PublishClinicalRangesRequest;
 import com.mentesvivas.backend.entity.audit.AuditEventType;
 import com.mentesvivas.backend.entity.audit.AuditRecord;
-import com.mentesvivas.backend.entity.link.LinkStatus;
 import com.mentesvivas.backend.entity.notification.NotificationType;
 import com.mentesvivas.backend.entity.patient.ClinicalColor;
 import com.mentesvivas.backend.entity.patient.ClinicalMetric;
@@ -13,11 +12,10 @@ import com.mentesvivas.backend.entity.patient.ClinicalRangePolicy;
 import com.mentesvivas.backend.entity.patient.VitalSign;
 import com.mentesvivas.backend.exception.common.ResourceNotFoundException;
 import com.mentesvivas.backend.exception.patient.ImpossibleValueException;
-import com.mentesvivas.backend.repository.link.CaregiverPatientLinkRepository;
 import com.mentesvivas.backend.repository.patient.ClinicalRangePolicyRepository;
+import com.mentesvivas.backend.service.alert.CriticalAlertService;
 import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.service.clinical.DoctorPatientAccess;
-import com.mentesvivas.backend.service.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,8 +36,7 @@ public class ClinicalRangeService {
 
     private final ClinicalRangePolicyRepository repository;
     private final DoctorPatientAccess doctors;
-    private final CaregiverPatientLinkRepository caregivers;
-    private final NotificationService notifications;
+    private final CriticalAlertService alerts;
     private final AuditTrail audit;
     private final Clock clock;
 
@@ -79,9 +76,8 @@ public class ClinicalRangeService {
 
     public void notifyIfCritical(VitalSign sign) {
         if (sign.getClinicalColor() == ClinicalColor.RED) {
-            caregivers.findByPatientIdAndStatus(sign.getPatientId(), LinkStatus.ACTIVE).forEach(link ->
-                    notifications.notify(link.getCaregiverId(), NotificationType.CRITICAL_MEASUREMENT, sign.getId(),
-                            "Uma aferição recebeu alerta clínico. Consulte o registro do paciente."));
+            alerts.create(sign.getPatientId(), sign.getRecordedBy(), NotificationType.CRITICAL_MEASUREMENT,
+                    sign.getId(), "Uma aferição recebeu alerta clínico. Consulte o registro do paciente.");
         }
     }
 
