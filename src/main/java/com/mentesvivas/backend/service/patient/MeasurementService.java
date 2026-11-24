@@ -23,10 +23,12 @@ public class MeasurementService {
     private final CurrentPatient currentPatient;
     private final BodyMeasurementRepository repository;
     private final MeasurementValidator validator;
+    private final PatientCareAccess access;
 
     @Transactional
     public MeasurementResponse record(RecordMeasurementRequest request) {
         User patient = currentPatient.get();
+        access.requireCareRecordsAllowed(patient);
         BigDecimal weight = null;
         BigDecimal height = null;
 

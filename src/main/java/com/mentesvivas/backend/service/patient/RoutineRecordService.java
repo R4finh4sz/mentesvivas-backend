@@ -35,6 +35,7 @@ public class RoutineRecordService {
     @Transactional
     public RoutineRecordResponse record(UUID patientId, RecordRoutineRequest request) {
         User author = access.requireWriter(patientId);
+        access.requireCareRecordsAllowed(author);
         validator.validate(request);
 
         Instant now = clock.instant();

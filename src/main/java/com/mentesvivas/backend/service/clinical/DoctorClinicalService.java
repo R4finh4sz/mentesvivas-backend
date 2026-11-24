@@ -3,6 +3,8 @@ package com.mentesvivas.backend.service.clinical;
 import com.mentesvivas.backend.entity.audit.PatientDataArea;
 import com.mentesvivas.backend.service.audit.AccessLog;
 import com.mentesvivas.backend.dto.clinical.DeclareDiseaseRequest;
+import com.mentesvivas.backend.dto.clinical.DeclareDiagnosisRequest;
+import com.mentesvivas.backend.dto.clinical.DiagnosisResponse;
 import com.mentesvivas.backend.dto.clinical.DefineHydrationGoalRequest;
 import com.mentesvivas.backend.dto.patient.AddAllergyRequest;
 import com.mentesvivas.backend.dto.patient.AllergyResponse;
@@ -24,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +37,7 @@ public class DoctorClinicalService {
     private final PatientProfileLoader profileLoader;
     private final SensitiveChangeRecorder changeRecorder;
     private final AccessLog accessLog;
+    private final DiagnosisService diagnosis;
 
     @Transactional
     public AllergyResponse addAllergy(UUID patientId, AddAllergyRequest request) {
@@ -100,13 +104,33 @@ public class DoctorClinicalService {
     @Transactional
     public void validateDisease(UUID patientId, DeclareDiseaseRequest request) {
         User doctor = access.requireDoctorOf(patientId);
+        updateDeclaredDisease(patientId, doctor.getId(), request.disease());
+        diagnosis.legacy(patientId, doctor.getId(), request.disease());
+    }
+
+    @Transactional
+    public DiagnosisResponse confirmDiagnosis(UUID patientId, DeclareDiagnosisRequest request) {
+        User doctor = access.requireDoctorOf(patientId);
+        DiagnosisResponse recorded = diagnosis.coded(patientId, doctor.getId(), request);
+        updateDeclaredDisease(patientId, doctor.getId(), recorded.disease());
+        return recorded;
+    }
+
+    @Transactional
+    public List<DiagnosisResponse> diagnoses(UUID patientId, int page, int size) {
+        User doctor = access.requireDoctorOf(patientId);
         accessLog.record(doctor.getId(), patientId, PatientDataArea.DECLARED_DISEASE);
+        return diagnosis.history(patientId, page, size);
+    }
+
+    private void updateDeclaredDisease(UUID patientId, UUID doctorId, String disease) {
+        accessLog.record(doctorId, patientId, PatientDataArea.DECLARED_DISEASE);
         PatientProfile profile = profileLoader.getOrCreate(patientId);
         String before = profile.getDeclaredDisease();
-        profile.setDeclaredDisease(request.disease());
+        profile.setDeclaredDisease(disease);
         profile.setDeclaredDiseaseValidated(true);
         changeRecorder.record(patientId, SensitiveField.DECLARED_DISEASE, ChangeType.UPDATED,
-                "Doenca registrada e validada pelo medico", doctor.getId(), before, request.disease());
+                "Doenca registrada e validada pelo medico", doctorId, before, disease);
     }
 
     @Transactional

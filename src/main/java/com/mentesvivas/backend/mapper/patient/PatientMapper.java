@@ -1,5 +1,6 @@
 package com.mentesvivas.backend.mapper.patient;
 
+import com.mentesvivas.backend.dto.patient.AgitationProtocolResponse;
 import com.mentesvivas.backend.dto.patient.AllergyResponse;
 import com.mentesvivas.backend.dto.patient.AppointmentResponse;
 import com.mentesvivas.backend.dto.patient.EmergencyContactResponse;
@@ -48,7 +49,7 @@ public final class PatientMapper {
         return new VitalSignResponse(sign.getId(), sign.getSystolic(), sign.getDiastolic(), sign.getHeartRate(),
                 sign.getGlucose(), sign.getGlucoseType(), sign.getTemperature(), sign.getOxygenSaturation(),
                 sign.getNotes(), sign.getSource(), sign.getSource() == MeasurementSource.OCR, sign.getRecordedBy(),
-                sign.getMeasuredAt());
+                sign.getMeasuredAt(), sign.getClinicalColor(), sign.getClinicalPolicyId());
     }
 
     public static RoutineRecordResponse toResponse(RoutineRecord record) {
@@ -61,9 +62,13 @@ public final class PatientMapper {
     }
 
     public static OccurrenceResponse toResponse(Occurrence occurrence) {
+        return toResponse(occurrence, null);
+    }
+
+    public static OccurrenceResponse toResponse(Occurrence occurrence, AgitationProtocolResponse protocol) {
         return new OccurrenceResponse(occurrence.getId(), occurrence.getType(), occurrence.getSeverity(),
                 occurrence.getDescription(), occurrence.isNeedsHospital(), occurrence.getSource(),
-                occurrence.getRecordedBy(), occurrence.getOccurredAt());
+                occurrence.getRecordedBy(), occurrence.getOccurredAt(), occurrence.getAgitationProtocolId(), protocol);
     }
 
     public static AppointmentResponse toResponse(Appointment appointment) {

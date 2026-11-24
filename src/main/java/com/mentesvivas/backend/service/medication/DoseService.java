@@ -45,6 +45,7 @@ public class DoseService {
     @Transactional
     public DoseResponse record(UUID patientId, UUID medicationId, RecordDoseRequest request) {
         User author = access.requireWriter(patientId);
+        access.requireCareRecordsAllowed(author);
         Medication medication = lock(patientId, medicationId);
         if (!medication.isActive()) {
             throw new ConflictException("Este medicamento esta inativo.");
@@ -65,6 +66,7 @@ public class DoseService {
     @Transactional
     public DoseResponse correct(UUID patientId, UUID doseId, CorrectDoseRequest request) {
         User author = access.requireWriter(patientId);
+        access.requireCareRecordsAllowed(author);
         DoseRecord dose = repository.findByIdAndPatientId(doseId, patientId)
                 .orElseThrow(() -> new ResourceNotFoundException("Dose nao encontrada."));
         if (dose.isDuplicate()) {

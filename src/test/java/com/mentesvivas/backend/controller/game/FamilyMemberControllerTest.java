@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -51,6 +52,8 @@ class FamilyMemberControllerTest {
         caregiver = accounts.caregiver("cuidador@exemplo.com", "52998224725");
         stranger = accounts.caregiver("outro@exemplo.com", "12345678909");
         linkCaregiver();
+        decide("/api/patients/me/consents/FAMILY_PHOTOS", patient, true).andExpect(status().isOk());
+        decide("/api/patients/me/consents/FAMILY_AUDIO", patient, true).andExpect(status().isOk());
     }
 
     private void linkCaregiver() throws Exception {
@@ -89,6 +92,74 @@ class FamilyMemberControllerTest {
                 .andExpect(jsonPath("$.name").value("Ana"))
                 .andExpect(jsonPath("$.kinship").value("filha"))
                 .andExpect(jsonPath("$.audioUrl").value("https://audio/ana.mp3"));
+    }
+
+    @Test
+    void separateConsentControlsMediaAndPatientRevocationPrevails() throws Exception {
+        String represented = "/api/caregivers/me/patients/" + patient.id() + "/consents/";
+        String patientConsents = "/api/patients/me/consents/";
+        decide(represented + "GEOLOCATION", stranger, true).andExpect(status().isForbidden());
+        decide(represented + "GEOLOCATION", caregiver, true).andExpect(status().isOk())
+                .andExpect(jsonPath("$.decidedByPatient").value(false));
+        String withAudio = """
+                {"name":"Ana","kinship":"filha","photoUrl":"https://img/ana.png","audioUrl":"https://audio/ana.mp3"}
+                """;
+        register(caregiver, withAudio).andExpect(status().isCreated());
+
+        decide(patientConsents + "FAMILY_AUDIO", patient, false).andExpect(status().isOk())
+                .andExpect(jsonPath("$.decidedByPatient").value(true));
+        decide(represented + "FAMILY_AUDIO", caregiver, true).andExpect(status().isConflict());
+        gallery(patient).andExpect(status().isOk()).andExpect(jsonPath("$.members[0].audioUrl").isEmpty());
+        register(caregiver, withAudio).andExpect(status().isForbidden());
+        register(caregiver, person("Bia")).andExpect(status().isCreated());
+
+        decide(patientConsents + "FAMILY_PHOTOS", patient, false).andExpect(status().isOk());
+        gallery(patient).andExpect(status().isForbidden());
+        register(caregiver, person("Caio")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/patients/me/consents").header("Authorization", bearer(patient.token())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.scope == 'GEOLOCATION')].granted",
+                        org.hamcrest.Matchers.contains(true)));
+    }
+
+    private ResultActions decide(String path, Account actor, boolean granted) throws Exception {
+        return mockMvc.perform(put(path).header("Authorization", bearer(actor.token()))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"granted\":" + granted + "}"));
+    }
+
+    @Test
+    void geofenceRequiresConsentAndNotifiesOnlyOncePerConfirmedExit() throws Exception {
+        String consent = "/api/patients/me/consents/GEOLOCATION";
+        String caregiverFence = "/api/caregivers/me/patients/" + patient.id() + "/geofence";
+        configureFence(caregiverFence).andExpect(status().isForbidden());
+        decide(consent, patient, true).andExpect(status().isOk());
+        configureFence(caregiverFence).andExpect(status().isOk())
+                .andExpect(jsonPath("$.readingIntervalSeconds").value(60));
+        mockMvc.perform(get("/api/patients/me/geofence").header("Authorization", bearer(patient.token())))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.notice").isNotEmpty());
+        reading("0", 5).andExpect(status().isOk()).andExpect(jsonPath("$.position").value("INSIDE"));
+        reading("0.001", 20).andExpect(status().isOk()).andExpect(jsonPath("$.position").value("UNKNOWN"));
+        reading("0.003", 10).andExpect(status().isOk()).andExpect(jsonPath("$.position").value("OUTSIDE"));
+        reading("0.004", 10).andExpect(status().isOk()).andExpect(jsonPath("$.position").value("OUTSIDE"));
+        mockMvc.perform(get("/api/notifications").header("Authorization", bearer(caregiver.token())))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[?(@.type == 'GEOFENCE_EXIT')].type",
+                        org.hamcrest.Matchers.contains("GEOFENCE_EXIT")));
+
+        decide(consent, patient, false).andExpect(status().isOk());
+        reading("0", 5).andExpect(status().isForbidden());
+        decide(consent, patient, true).andExpect(status().isOk());
+        reading("0", 5).andExpect(status().isNotFound());
+    }
+
+    private ResultActions configureFence(String route) throws Exception {
+        return mockMvc.perform(put(route).header("Authorization", bearer(caregiver.token()))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"latitude\":0,\"longitude\":0,\"radiusMeters\":100}"));
+    }
+
+    private ResultActions reading(String longitude, int accuracy) throws Exception {
+        return mockMvc.perform(post("/api/patients/me/geofence/readings")
+                .header("Authorization", bearer(patient.token())).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"latitude\":0,\"longitude\":%s,\"accuracyMeters\":%d}".formatted(longitude, accuracy)));
     }
 
     @Test

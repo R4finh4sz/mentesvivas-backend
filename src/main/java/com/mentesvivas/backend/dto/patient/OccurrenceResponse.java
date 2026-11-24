@@ -15,6 +15,8 @@ public record OccurrenceResponse(
         boolean needsHospital,
         MeasurementSource source,
         UUID recordedBy,
-        Instant occurredAt
+        Instant occurredAt,
+        UUID agitationProtocolId,
+        AgitationProtocolResponse agitationProtocol
 ) {
 }

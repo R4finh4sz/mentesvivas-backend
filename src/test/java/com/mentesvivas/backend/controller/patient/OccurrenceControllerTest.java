@@ -85,6 +85,29 @@ class OccurrenceControllerTest {
     }
 
     @Test
+    void agitationReturnsOnlyTheProtocolApprovedForItsSeverity() throws Exception {
+        String crisis = "/api/caregivers/me/patients/" + patient.id() + "/crisis";
+        mockMvc.perform(get(crisis).param("severity", "MILD").header("Authorization", bearer(caregiver.token())))
+                .andExpect(status().isForbidden());
+        linkCaregiver();
+        mockMvc.perform(get(crisis).param("severity", "SEVERE").header("Authorization", bearer(caregiver.token())))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.protocol").isEmpty())
+                .andExpect(jsonPath("$.emergencyContacts.length()").value(2));
+        mockMvc.perform(post("/api/doctors/me/agitation-protocols/MILD")
+                .header("Authorization", bearer(doctor.token())).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"instructions\":\"Conteúdo clínico de teste\"}"))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.severity").value("MILD"));
+
+        record(caregiver, patient, AGITATION).andExpect(status().isCreated())
+                .andExpect(jsonPath("$.agitationProtocol.instructions").value("Conteúdo clínico de teste"));
+        record(caregiver, patient, AGITATION.replace("MILD", "SEVERE")).andExpect(status().isCreated())
+                .andExpect(jsonPath("$.agitationProtocol").isEmpty());
+        history(caregiver, patient).andExpect(jsonPath("$[?(@.severity == 'MILD')].agitationProtocolId").isNotEmpty());
+        mockMvc.perform(get(crisis).param("severity", "MILD").header("Authorization", bearer(caregiver.token())))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.protocol.severity").value("MILD"));
+    }
+
+    @Test
     void linkedCaregiverRecordsAnOccurrenceWithAutomaticTime() throws Exception {
         linkCaregiver();
 

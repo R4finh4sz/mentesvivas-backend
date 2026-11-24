@@ -3,11 +3,13 @@ package com.mentesvivas.backend.service.game;
 import com.mentesvivas.backend.dto.game.FamilyGalleryResponse;
 import com.mentesvivas.backend.dto.game.RegisterFamilyMemberRequest;
 import com.mentesvivas.backend.entity.game.FamilyMember;
+import com.mentesvivas.backend.entity.patient.ConsentScope;
 import com.mentesvivas.backend.entity.user.User;
 import com.mentesvivas.backend.exception.common.ResourceNotFoundException;
 import com.mentesvivas.backend.repository.game.FamilyMemberRepository;
 import com.mentesvivas.backend.service.link.CaregiverPatientAccess;
 import com.mentesvivas.backend.service.patient.PatientCareAccess;
+import com.mentesvivas.backend.service.patient.PatientConsentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,7 +46,7 @@ class FamilyMemberServiceTest {
     @Mock
     private FamilyMemberRepository repository;
     @Mock
-    private PhotoConsentGuard consent;
+    private PatientConsentService consent;
 
     private FamilyMemberService service;
     private User caregiver;
@@ -88,7 +90,7 @@ class FamilyMemberServiceTest {
     @Test
     void doesNotRegisterWithoutPhotoConsent() {
         when(caregiverAccess.requireRepresentativeOf(PATIENT)).thenReturn(caregiver);
-        doThrow(new AccessDeniedException("sem consentimento")).when(consent).requireConsent(PATIENT);
+        doThrow(new AccessDeniedException("sem consentimento")).when(consent).require(PATIENT, ConsentScope.FAMILY_PHOTOS);
 
         assertThatThrownBy(() -> service.register(PATIENT,
                 new RegisterFamilyMemberRequest("Ana", "filha", "https://img/ana.png", null)))

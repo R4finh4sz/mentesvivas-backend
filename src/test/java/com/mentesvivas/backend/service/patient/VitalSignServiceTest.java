@@ -45,13 +45,16 @@ class VitalSignServiceTest {
     private VitalSignValidator validator;
     @Mock
     private AccessLog accessLog;
+    @Mock
+    private ClinicalRangeService clinicalRanges;
 
     private VitalSignService service;
     private User author;
 
     @BeforeEach
     void setUp() {
-        service = new VitalSignService(access, repository, validator, accessLog, Clock.fixed(NOW, ZoneOffset.UTC));
+        service = new VitalSignService(access, repository, validator, accessLog, Clock.fixed(NOW, ZoneOffset.UTC),
+                clinicalRanges);
         author = new User();
         author.setId(UUID.randomUUID());
     }

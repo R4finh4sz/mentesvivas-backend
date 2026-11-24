@@ -30,12 +30,14 @@ class PatientCareAccessTest {
     private CaregiverPatientAccess caregiverAccess;
     @Mock
     private DoctorPatientAccess doctorAccess;
+    @Mock
+    private PatientAutonomyService autonomy;
 
     private PatientCareAccess access;
 
     @BeforeEach
     void setUp() {
-        access = new PatientCareAccess(currentUser, caregiverAccess, doctorAccess);
+        access = new PatientCareAccess(currentUser, caregiverAccess, doctorAccess, autonomy);
     }
 
     private User user(Role role, UUID id) {

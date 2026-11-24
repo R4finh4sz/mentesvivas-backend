@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,14 +22,18 @@ public class NotificationService {
 
     private final NotificationRepository repository;
     private final CurrentUser currentUser;
+    private final NotificationPreferenceService preferences;
 
     public void notify(UUID recipientId, NotificationType type, UUID referenceId, String message) {
-        repository.save(new Notification(recipientId, type, referenceId, message));
+        if (preferences.allows(recipientId, type)) {
+            repository.save(new Notification(recipientId, type, referenceId, message));
+        }
     }
 
     @Transactional(readOnly = true)
     public List<NotificationResponse> mine() {
         return repository.findByRecipientIdOrderByCreatedAtDesc(currentUser.get().getId()).stream()
+                .sorted(Comparator.comparing(notification -> !notification.getType().isCritical()))
                 .map(LinkMapper::toResponse)
                 .toList();
     }

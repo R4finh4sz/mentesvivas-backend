@@ -1,12 +1,15 @@
 package com.mentesvivas.backend.service.clinical;
 
 import com.mentesvivas.backend.dto.clinical.TimelineCategory;
+import com.mentesvivas.backend.dto.clinical.TimelineDose;
 import com.mentesvivas.backend.entity.audit.PatientDataArea;
+import com.mentesvivas.backend.entity.medication.DoseStatus;
 import com.mentesvivas.backend.entity.patient.MeasurementSource;
 import com.mentesvivas.backend.entity.patient.RoutineRecord;
 import com.mentesvivas.backend.entity.patient.RoutineType;
 import com.mentesvivas.backend.entity.patient.VitalSign;
 import com.mentesvivas.backend.entity.user.User;
+import com.mentesvivas.backend.repository.medication.DoseRecordRepository;
 import com.mentesvivas.backend.repository.patient.BodyMeasurementRepository;
 import com.mentesvivas.backend.repository.patient.OccurrenceRepository;
 import com.mentesvivas.backend.repository.patient.RoutineRecordRepository;
@@ -52,6 +55,8 @@ class ClinicalTimelineServiceTest {
     @Mock
     private BodyMeasurementRepository measurementRepository;
     @Mock
+    private DoseRecordRepository doses;
+    @Mock
     private AccessLog accessLog;
 
     private ClinicalTimelineService service;
@@ -60,7 +65,7 @@ class ClinicalTimelineServiceTest {
     @BeforeEach
     void setUp() {
         service = new ClinicalTimelineService(access, periodResolver, vitalSignRepository, routineRepository,
-                occurrenceRepository, measurementRepository, accessLog);
+                occurrenceRepository, measurementRepository, doses, accessLog);
         doctor = new User();
         doctor.setId(UUID.randomUUID());
     }
@@ -105,12 +110,15 @@ class ClinicalTimelineServiceTest {
         mood.setSource(MeasurementSource.TYPED);
         when(routineRepository.findByPatientIdAndTypeAndOccurredAtBetweenOrderByOccurredAtDesc(
                 PATIENT, RoutineType.MOOD, FROM, TO)).thenReturn(List.of(mood));
+        var dose = new TimelineDose("Medicamento de teste", DoseStatus.TAKEN, FROM, FROM);
+        when(doses.findTimelineDoses(PATIENT, FROM, TO)).thenReturn(List.of(dose));
 
         var timeline = service.timeline(PATIENT, FROM, TO);
 
         assertThat(timeline.hasData()).isTrue();
         assertThat(timeline.vitalSigns()).hasSize(1);
         assertThat(timeline.moods()).hasSize(1);
+        assertThat(timeline.medicationDoses()).containsExactly(dose);
         assertThat(timeline.categoriesWithoutData())
                 .containsExactly(TimelineCategory.SLEEP, TimelineCategory.OCCURRENCES, TimelineCategory.WEIGHT);
     }
@@ -126,6 +134,7 @@ class ClinicalTimelineServiceTest {
         verify(accessLog).record(doctor.getId(), PATIENT, PatientDataArea.MEASUREMENTS);
         verify(accessLog).record(doctor.getId(), PATIENT, PatientDataArea.ROUTINE);
         verify(accessLog).record(doctor.getId(), PATIENT, PatientDataArea.OCCURRENCES);
+        verify(accessLog).record(doctor.getId(), PATIENT, PatientDataArea.MEDICATIONS);
     }
 
     @Test

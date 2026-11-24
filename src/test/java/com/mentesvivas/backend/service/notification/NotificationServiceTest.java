@@ -30,13 +30,15 @@ class NotificationServiceTest {
     private NotificationRepository repository;
     @Mock
     private CurrentUser currentUser;
+    @Mock
+    private NotificationPreferenceService preferences;
 
     private NotificationService service;
     private User user;
 
     @BeforeEach
     void setUp() {
-        service = new NotificationService(repository, currentUser);
+        service = new NotificationService(repository, currentUser, preferences);
         user = new User();
         user.setId(UUID.randomUUID());
         lenient().when(currentUser.get()).thenReturn(user);
@@ -45,6 +47,7 @@ class NotificationServiceTest {
     @Test
     void notifyStoresAnUnreadNotificationForTheRecipient() {
         UUID recipient = UUID.randomUUID();
+        when(preferences.allows(recipient, NotificationType.LINK_ENDED)).thenReturn(true);
 
         service.notify(recipient, NotificationType.LINK_ENDED, null, "Encerrado");
 

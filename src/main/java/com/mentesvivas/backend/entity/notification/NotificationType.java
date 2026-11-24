@@ -10,5 +10,15 @@ public enum NotificationType {
     SOS_ALERT,
     PRESCRIPTION_AVAILABLE,
     PRESCRIPTION_EXPIRING,
-    BREATHING_STARTED
+    BREATHING_STARTED,
+    SUNDOWN_REMINDER,
+    MEDICATION_REMINDER,
+    GEOFENCE_NOTICE,
+    CRITICAL_MEASUREMENT,
+    GEOFENCE_EXIT,
+    AUTONOMY_CHANGED;
+
+    public boolean isCritical() {
+        return this == SOS_ALERT || this == CRITICAL_MEASUREMENT || this == GEOFENCE_EXIT;
+    }
 }

@@ -58,4 +58,10 @@ public class VitalSign {
 
     @Column(nullable = false)
     private Instant measuredAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 6)
+    private ClinicalColor clinicalColor;
+
+    private UUID clinicalPolicyId;
 }

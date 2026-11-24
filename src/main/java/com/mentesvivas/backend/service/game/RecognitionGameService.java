@@ -6,12 +6,15 @@ import com.mentesvivas.backend.dto.game.RecognitionQuestionResponse;
 import com.mentesvivas.backend.entity.game.FamilyMember;
 import com.mentesvivas.backend.entity.game.RecognitionQuestion;
 import com.mentesvivas.backend.entity.game.RecognitionSession;
+import com.mentesvivas.backend.entity.patient.ConsentScope;
+import com.mentesvivas.backend.entity.user.User;
 import com.mentesvivas.backend.exception.common.ConflictException;
 import com.mentesvivas.backend.exception.common.ResourceNotFoundException;
 import com.mentesvivas.backend.exception.patient.ImpossibleValueException;
 import com.mentesvivas.backend.repository.game.FamilyMemberRepository;
 import com.mentesvivas.backend.repository.game.RecognitionSessionRepository;
 import com.mentesvivas.backend.service.patient.PatientCareAccess;
+import com.mentesvivas.backend.service.patient.PatientConsentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +38,7 @@ public class RecognitionGameService {
     private static final String COMPLETION = "Parabéns! Você concluiu o jogo. Volte à lista de jogos.";
 
     private final PatientCareAccess access;
-    private final PhotoConsentGuard consent;
+    private final PatientConsentService consent;
     private final FamilyMemberRepository members;
     private final RecognitionSessionRepository sessions;
     private final RecognitionGamePolicy policy;
@@ -43,8 +46,9 @@ public class RecognitionGameService {
 
     @Transactional
     public RecognitionQuestionResponse start(UUID patientId) {
-        UUID startedBy = access.requireWriter(patientId).getId();
-        consent.requireConsent(patientId);
+        User starter = access.requireWriter(patientId);
+        access.requireGamesAllowed(starter);
+        consent.require(patientId, ConsentScope.FAMILY_PHOTOS);
         Map<UUID, FamilyMember> gallery = gallery(patientId);
         if (!policy.isUnlocked(gallery.size())) {
             throw new ConflictException(policy.guidance(gallery.size()));
@@ -56,7 +60,7 @@ public class RecognitionGameService {
         Instant now = clock.instant();
         RecognitionSession session = new RecognitionSession();
         session.setPatientId(patientId);
-        session.setStartedBy(startedBy);
+        session.setStartedBy(starter.getId());
         session.setStartedAt(now);
         session.setQuestionShownAt(now);
         for (FamilyMember target : people) {
@@ -90,7 +94,8 @@ public class RecognitionGameService {
 
         Instant now = clock.instant();
         question.recordAnswer(Math.max(0, Duration.between(session.getQuestionShownAt(), now).toMillis()));
-        String audio = gallery.get(question.getMemberId()).getAudioUrl();
+        String audio = consent.granted(patientId, ConsentScope.FAMILY_AUDIO)
+                ? gallery.get(question.getMemberId()).getAudioUrl() : null;
         int next = session.getQuestionIndex() + 1;
         if (next == session.getQuestions().size()) {
             session.setFinishedAt(now);
@@ -102,8 +107,8 @@ public class RecognitionGameService {
     }
 
     private RecognitionSession openSession(UUID patientId, UUID sessionId) {
-        access.requireWriter(patientId);
-        consent.requireConsent(patientId);
+        access.requireGamesAllowed(access.requireWriter(patientId));
+        consent.require(patientId, ConsentScope.FAMILY_PHOTOS);
         RecognitionSession session = sessions.findByIdAndPatientId(sessionId, patientId)
                 .orElseThrow(() -> new ResourceNotFoundException("Jogo não encontrado."));
         if (session.getFinishedAt() != null) {

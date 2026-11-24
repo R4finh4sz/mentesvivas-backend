@@ -52,4 +52,6 @@ public class Occurrence {
 
     @Column(nullable = false)
     private Instant occurredAt;
+
+    private UUID agitationProtocolId;
 }
