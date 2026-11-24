@@ -11,6 +11,7 @@ public record NotificationResponse(
         UUID referenceId,
         String message,
         Instant createdAt,
-        boolean read
+        boolean read,
+        boolean silent
 ) {
 }

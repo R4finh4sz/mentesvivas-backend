@@ -8,6 +8,7 @@ import com.mentesvivas.backend.dto.notification.NotificationResponse;
 import com.mentesvivas.backend.entity.link.CaregiverPatientLink;
 import com.mentesvivas.backend.entity.link.DoctorPatientLink;
 import com.mentesvivas.backend.entity.notification.Notification;
+import com.mentesvivas.backend.entity.notification.NotificationType;
 import com.mentesvivas.backend.entity.user.User;
 
 public final class LinkMapper {
@@ -36,6 +37,7 @@ public final class LinkMapper {
 
     public static NotificationResponse toResponse(Notification notification) {
         return new NotificationResponse(notification.getId(), notification.getType(), notification.getReferenceId(),
-                notification.getMessage(), notification.getCreatedAt(), notification.getReadAt() != null);
+                notification.getMessage(), notification.getCreatedAt(), notification.getReadAt() != null,
+                notification.getType() == NotificationType.BREATHING_STARTED);
     }
 }
