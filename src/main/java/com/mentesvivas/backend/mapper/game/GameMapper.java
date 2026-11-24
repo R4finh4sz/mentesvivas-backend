@@ -8,8 +8,8 @@ public final class GameMapper {
     private GameMapper() {
     }
 
-    public static FamilyMemberResponse toResponse(FamilyMember member) {
+    public static FamilyMemberResponse toResponse(FamilyMember member, boolean showAudio) {
         return new FamilyMemberResponse(member.getId(), member.getName(), member.getKinship(),
-                member.getPhotoUrl(), member.getAudioUrl());
+                member.getPhotoUrl(), showAudio ? member.getAudioUrl() : null);
     }
 }
