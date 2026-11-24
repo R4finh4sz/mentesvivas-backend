@@ -31,6 +31,7 @@ public class OccurrenceService {
     @Transactional
     public OccurrenceResponse record(UUID patientId, RecordOccurrenceRequest request) {
         User author = access.requireWriter(patientId);
+        access.requireCareRecordsAllowed(author);
         MeasurementSource source = request.source() == null ? MeasurementSource.TYPED : request.source();
         if (source == MeasurementSource.OCR) {
             throw new ImpossibleValueException("A ocorrencia aceita apenas texto digitado ou ditado.");

@@ -15,7 +15,8 @@ public enum NotificationType {
     MEDICATION_REMINDER,
     GEOFENCE_NOTICE,
     CRITICAL_MEASUREMENT,
-    GEOFENCE_EXIT;
+    GEOFENCE_EXIT,
+    AUTONOMY_CHANGED;
 
     public boolean isCritical() {
         return this == SOS_ALERT || this == CRITICAL_MEASUREMENT || this == GEOFENCE_EXIT;

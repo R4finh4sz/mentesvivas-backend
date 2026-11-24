@@ -35,12 +35,14 @@ class MeasurementServiceTest {
     private BodyMeasurementRepository repository;
     @Mock
     private MeasurementValidator validator;
+    @Mock
+    private PatientCareAccess access;
 
     private MeasurementService service;
 
     @BeforeEach
     void setUp() {
-        service = new MeasurementService(currentPatient, repository, validator);
+        service = new MeasurementService(currentPatient, repository, validator, access);
         when(currentPatient.get()).thenReturn(new User() {
             @Override
             public UUID getId() {

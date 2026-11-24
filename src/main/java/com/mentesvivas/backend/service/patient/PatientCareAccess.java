@@ -18,6 +18,7 @@ public class PatientCareAccess {
     private final CurrentUser currentUser;
     private final CaregiverPatientAccess caregiverAccess;
     private final DoctorPatientAccess doctorAccess;
+    private final PatientAutonomyService autonomy;
 
     public User requireWriter(UUID patientId) {
         User user = currentUser.get();
@@ -35,6 +36,18 @@ public class PatientCareAccess {
             return doctorAccess.requireDoctorOf(patientId);
         }
         return requireWriter(patientId);
+    }
+
+    public void requireCareRecordsAllowed(User actor) {
+        if (actor.getRole() == Role.PATIENT && autonomy.settings(actor.getId()).restrictCareRecords()) {
+            throw new AccessDeniedException("O registro de cuidado está restrito no modo assistido.");
+        }
+    }
+
+    public void requireGamesAllowed(User actor) {
+        if (actor.getRole() == Role.PATIENT && autonomy.settings(actor.getId()).restrictGames()) {
+            throw new AccessDeniedException("Os jogos estão restritos no modo assistido.");
+        }
     }
 
     private User requireSelf(User user, UUID patientId) {

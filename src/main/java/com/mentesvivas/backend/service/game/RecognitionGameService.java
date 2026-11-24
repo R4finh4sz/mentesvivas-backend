@@ -7,6 +7,7 @@ import com.mentesvivas.backend.entity.game.FamilyMember;
 import com.mentesvivas.backend.entity.game.RecognitionQuestion;
 import com.mentesvivas.backend.entity.game.RecognitionSession;
 import com.mentesvivas.backend.entity.patient.ConsentScope;
+import com.mentesvivas.backend.entity.user.User;
 import com.mentesvivas.backend.exception.common.ConflictException;
 import com.mentesvivas.backend.exception.common.ResourceNotFoundException;
 import com.mentesvivas.backend.exception.patient.ImpossibleValueException;
@@ -45,7 +46,8 @@ public class RecognitionGameService {
 
     @Transactional
     public RecognitionQuestionResponse start(UUID patientId) {
-        UUID startedBy = access.requireWriter(patientId).getId();
+        User starter = access.requireWriter(patientId);
+        access.requireGamesAllowed(starter);
         consent.require(patientId, ConsentScope.FAMILY_PHOTOS);
         Map<UUID, FamilyMember> gallery = gallery(patientId);
         if (!policy.isUnlocked(gallery.size())) {
@@ -58,7 +60,7 @@ public class RecognitionGameService {
         Instant now = clock.instant();
         RecognitionSession session = new RecognitionSession();
         session.setPatientId(patientId);
-        session.setStartedBy(startedBy);
+        session.setStartedBy(starter.getId());
         session.setStartedAt(now);
         session.setQuestionShownAt(now);
         for (FamilyMember target : people) {
@@ -105,7 +107,7 @@ public class RecognitionGameService {
     }
 
     private RecognitionSession openSession(UUID patientId, UUID sessionId) {
-        access.requireWriter(patientId);
+        access.requireGamesAllowed(access.requireWriter(patientId));
         consent.require(patientId, ConsentScope.FAMILY_PHOTOS);
         RecognitionSession session = sessions.findByIdAndPatientId(sessionId, patientId)
                 .orElseThrow(() -> new ResourceNotFoundException("Jogo não encontrado."));

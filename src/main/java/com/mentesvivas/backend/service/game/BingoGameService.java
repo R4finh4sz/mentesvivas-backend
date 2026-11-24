@@ -46,6 +46,7 @@ public class BingoGameService {
     @Transactional
     public StartBingoResponse start(UUID patientId) {
         User starter = access.requireWriter(patientId);
+        access.requireGamesAllowed(starter);
         List<BingoSound> library = sounds.findByActiveTrueOrderByInstrumentAsc();
         if (library.size() < properties.minimumSounds()) {
             throw new ConflictException("O Bingo Musical ainda nao esta disponivel: a biblioteca precisa de pelo menos "
@@ -71,7 +72,7 @@ public class BingoGameService {
 
     @Transactional
     public BingoRoundResponse current(UUID patientId, UUID sessionId) {
-        access.requireWriter(patientId);
+        access.requireGamesAllowed(access.requireWriter(patientId));
         BingoSession session = openSession(patientId, sessionId);
         BingoRound round = currentRound(session);
         markShown(round);
@@ -80,7 +81,7 @@ public class BingoGameService {
 
     @Transactional
     public BingoAnswerResponse answer(UUID patientId, UUID sessionId, AnswerBingoRequest request) {
-        access.requireWriter(patientId);
+        access.requireGamesAllowed(access.requireWriter(patientId));
         BingoSession session = openSession(patientId, sessionId);
         BingoRound round = currentRound(session);
         if (!round.getId().equals(request.roundId())) {

@@ -32,6 +32,7 @@ public class VitalSignService {
     @Transactional
     public VitalSignResponse record(UUID patientId, RecordVitalSignRequest request) {
         User author = access.requireWriter(patientId);
+        access.requireCareRecordsAllowed(author);
         validator.validate(request);
 
         VitalSign sign = new VitalSign();

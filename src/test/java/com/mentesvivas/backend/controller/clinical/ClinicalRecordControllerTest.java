@@ -376,6 +376,52 @@ class ClinicalRecordControllerTest {
     }
 
     @Test
+    void caregiverCanRestrictSelfRecordAndGamesWhileEmergencyRemainsAvailable() throws Exception {
+        String autonomy = "/api/caregivers/me/patients/" + patient.id() + "/autonomy";
+        String patientToken = bearer(patient.token());
+        String carePath = "/api/care/patients/" + patient.id();
+        String records = carePath + "/vital-signs";
+        String measurement = "{\"heartRate\":70}";
+        String assisted = """
+                {"mode":"ASSISTED","restrictCareRecords":true,"restrictGames":true}
+                """;
+        configureAutonomy(autonomy, assisted).andExpect(status().isForbidden());
+        accept("/api/caregiver-links/invitations", "/api/caregiver-links", caregiver);
+        configureAutonomy(autonomy, assisted).andExpect(status().isOk());
+        configureAutonomy(autonomy, assisted).andExpect(status().isOk());
+        mockMvc.perform(get("/api/patients/me/autonomy").header("Authorization", patientToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.mode").value("ASSISTED"));
+        mockMvc.perform(get("/api/notifications").header("Authorization", patientToken))
+                .andExpect(jsonPath("$[?(@.type == 'AUTONOMY_CHANGED')].type",
+                        org.hamcrest.Matchers.contains("AUTONOMY_CHANGED")));
+        mockMvc.perform(post(records).header("Authorization", patientToken)
+                .contentType(MediaType.APPLICATION_JSON).content(measurement)).andExpect(status().isForbidden());
+        mockMvc.perform(post(records).header("Authorization", bearer(caregiver.token()))
+                .contentType(MediaType.APPLICATION_JSON).content(measurement)).andExpect(status().isCreated());
+        mockMvc.perform(get(records).header("Authorization", patientToken)).andExpect(status().isOk());
+        mockMvc.perform(post(carePath + "/games/musical-bingo/sessions").header("Authorization", patientToken))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/patients/me/sos").header("Authorization", patientToken))
+                .andExpect(status().isCreated());
+        configureAutonomy(autonomy, """
+                {"mode":"AUTONOMOUS","restrictCareRecords":false,"restrictGames":false}
+                """).andExpect(status().isOk());
+        patientPost(records, measurement);
+        configureAutonomy(autonomy, assisted).andExpect(status().isOk());
+        String links = mockMvc.perform(get("/api/caregiver-links").header("Authorization", patientToken))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String linkId = JsonPath.read(links, "$[0].id");
+        mockMvc.perform(post("/api/caregiver-links/" + linkId + "/end").header("Authorization", patientToken))
+                .andExpect(status().isOk());
+        patientPost(records, measurement);
+    }
+
+    private ResultActions configureAutonomy(String path, String body) throws Exception {
+        return mockMvc.perform(put(path).header("Authorization", bearer(caregiver.token()))
+                .contentType(MediaType.APPLICATION_JSON).content(body));
+    }
+
+    @Test
     void doctorPatientListFiltersActiveLinksByActivityAndPendingAlert() throws Exception {
         String directory = "/api/doctors/me/patients";
         String token = bearer(doctor.token());
