@@ -1,0 +1,3399 @@
+{
+  "info": {
+    "_postman_id": "76162f59-4ed2-4fa7-b75f-5d2d337239ec",
+    "name": "MentesVivas API",
+    "description": "Testes manuais da API MentesVivas",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1 - Publica",
+      "item": [
+        {
+          "name": "Termos",
+          "item": [
+            {
+              "name": "Termos vigentes (Termos de Uso)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.environment.set(\"termsVersion\", (function (json) { return json.version; })(pm.response.json()));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/terms",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "terms"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Politica de Privacidade vigente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.environment.set(\"privacyVersion\", (function (json) { return json.version; })(pm.response.json()));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/terms?type=PRIVACY_POLICY",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "terms"
+                  ],
+                  "query": [
+                    {
+                      "key": "type",
+                      "value": "PRIVACY_POLICY"
+                    }
+                  ]
+                },
+                "description": "Responde 404 se nenhuma politica foi publicada."
+              }
+            },
+            {
+              "name": "Consentimento especifico para medico",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/terms?type=SPECIFIC_CONSENT&role=DOCTOR",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "terms"
+                  ],
+                  "query": [
+                    {
+                      "key": "type",
+                      "value": "SPECIFIC_CONSENT"
+                    },
+                    {
+                      "key": "role",
+                      "value": "DOCTOR"
+                    }
+                  ]
+                },
+                "description": "Responde 404 se nao houver consentimento publicado para o perfil."
+              }
+            },
+            {
+              "name": "Documentos exigidos no cadastro (paciente)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/terms/signup?role=PATIENT",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "terms",
+                    "signup"
+                  ],
+                  "query": [
+                    {
+                      "key": "role",
+                      "value": "PATIENT"
+                    }
+                  ]
+                },
+                "description": "Lista a versao vigente de cada tipo de documento que vale para o perfil (RN25)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registro",
+          "item": [
+            {
+              "name": "Registrar paciente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.test(\"role = PATIENT\", function () { pm.expect(pm.response.json().role).to.eql(\"PATIENT\"); });",
+                      "pm.environment.set(\"patientId\", (function (json) { return json.id; })(pm.response.json()));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fullName\": \"Maria da Silva\",\n  \"cpf\": \"52998224725\",\n  \"birthDate\": \"1950-03-10\",\n  \"phone\": \"11999998888\",\n  \"email\": \"{{patientEmail}}\",\n  \"password\": \"{{password}}\",\n  \"passwordConfirmation\": \"{{password}}\",\n  \"role\": \"PATIENT\",\n  \"termsVersion\": {{termsVersion}},\n  \"acceptTerms\": true,\n  \"acceptHealthData\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Rota unica de cadastro do aplicativo: o tipo de usuario vai em \"role\" (RN12, RN13). Se houver Politica de Privacidade ou Consentimento Especifico vigentes para o perfil, envie tambem privacyPolicyVersion e specificConsentVersion (RN25). A foto e opcional: \"photoUrl\" com link https (RN16)."
+              }
+            },
+            {
+              "name": "Registrar cuidador",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.test(\"role = CAREGIVER\", function () { pm.expect(pm.response.json().role).to.eql(\"CAREGIVER\"); });",
+                      "pm.environment.set(\"caregiverId\", (function (json) { return json.id; })(pm.response.json()));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fullName\": \"Carlos Souza\",\n  \"cpf\": \"11144477735\",\n  \"birthDate\": \"1950-03-10\",\n  \"phone\": \"11999998888\",\n  \"email\": \"{{caregiverEmail}}\",\n  \"password\": \"{{password}}\",\n  \"passwordConfirmation\": \"{{password}}\",\n  \"role\": \"CAREGIVER\",\n  \"termsVersion\": {{termsVersion}},\n  \"acceptTerms\": true,\n  \"acceptHealthData\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Rota unica de cadastro do aplicativo: o tipo de usuario vai em \"role\" (RN12, RN13). Se houver Politica de Privacidade ou Consentimento Especifico vigentes para o perfil, envie tambem privacyPolicyVersion e specificConsentVersion (RN25). A foto e opcional: \"photoUrl\" com link https (RN16)."
+              }
+            },
+            {
+              "name": "Registrar medico (portal)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.test(\"role = DOCTOR\", function () { pm.expect(pm.response.json().role).to.eql(\"DOCTOR\"); });",
+                      "pm.environment.set(\"doctorId\", (function (json) { return json.id; })(pm.response.json()));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register/doctor",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register",
+                    "doctor"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fullName\": \"Dr. Paulo Lima\",\n  \"cpf\": \"12345678909\",\n  \"phone\": \"11988887777\",\n  \"email\": \"{{doctorEmail}}\",\n  \"password\": \"{{password}}\",\n  \"passwordConfirmation\": \"{{password}}\",\n  \"crm\": \"123456\",\n  \"crmState\": \"SP\",\n  \"termsVersion\": {{termsVersion}},\n  \"acceptTerms\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "O CRM nasce nao conferido; o administrador confere em 2 - Admin > CRM (RN28)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Confirmar e-mail",
+          "item": [
+            {
+              "name": "Reenviar codigo de confirmacao",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 202\", function () { pm.response.to.have.status(202); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/email/resend",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "email",
+                    "resend"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{patientEmail}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Confirmar e-mail do paciente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 204\", function () { pm.response.to.have.status(204); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/email/confirm",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "email",
+                    "confirm"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{patientEmail}}\",\n  \"code\": \"{{emailCode}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Preencha emailCode no ambiente com o codigo recebido por e-mail. Ao confirmar, convites enviados a este e-mail viram vinculos pendentes (RN44)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "item": [
+            {
+              "name": "Login paciente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.environment.set(\"patientToken\", (function (json) { return json.accessToken; })(pm.response.json()));",
+                      "pm.environment.set(\"accessToken\", (function (json) { return json.accessToken; })(pm.response.json()));",
+                      "pm.environment.set(\"refreshToken\", (function (json) { return json.refreshToken; })(pm.response.json()));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{patientEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Login cuidador",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.environment.set(\"caregiverToken\", (function (json) { return json.accessToken; })(pm.response.json()));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{caregiverEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Login medico (passo 1: senha)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 202\", function () { pm.response.to.have.status(202); });",
+                      "pm.test(\"exige segundo fator\", function () { pm.expect(pm.response.json().twoFactorRequired).to.eql(true); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{doctorEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Se o medico usa e-mail, o codigo chega por e-mail; se usa autenticador, informe o codigo do aplicativo. A resposta traz \"method\" (RN04)."
+              }
+            },
+            {
+              "name": "Login medico (passo 2: codigo)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"role = DOCTOR\", function () { pm.expect(pm.response.json().role).to.eql(\"DOCTOR\"); });",
+                      "pm.environment.set(\"doctorToken\", (function (json) { return json.accessToken; })(pm.response.json()));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/2fa/verify",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "2fa",
+                    "verify"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{doctorEmail}}\",\n  \"code\": \"{{twoFactorCode}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Preencha twoFactorCode no ambiente com o codigo de seis digitos (e-mail ou aplicativo autenticador)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sessao",
+          "item": [
+            {
+              "name": "Refresh (rotaciona o token)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.environment.set(\"refreshToken\", (function (json) { return json.refreshToken; })(pm.response.json()));",
+                      "pm.environment.set(\"patientToken\", (function (json) { return json.accessToken; })(pm.response.json()));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/refresh",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "refresh"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Logout (revoga o refresh token)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 204\", function () { pm.response.to.have.status(204); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/logout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "logout"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Recuperacao de senha",
+          "item": [
+            {
+              "name": "Solicitar codigo",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 202\", function () { pm.response.to.have.status(202); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/password/forgot",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "password",
+                    "forgot"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{patientEmail}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "A resposta e a mesma exista ou nao a conta (RN09)."
+              }
+            },
+            {
+              "name": "Redefinir senha",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 204\", function () { pm.response.to.have.status(204); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/password/reset",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "password",
+                    "reset"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{patientEmail}}\",\n  \"code\": \"{{recoveryCode}}\",\n  \"newPassword\": \"{{password}}\",\n  \"passwordConfirmation\": \"{{password}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Preencha recoveryCode com o codigo recebido por e-mail. Encerra as demais sessoes (RN11)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Erros esperados",
+          "item": [
+            {
+              "name": "Login com senha errada (401)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 401\", function () { pm.response.to.have.status(401); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{patientEmail}}\",\n  \"password\": \"SenhaErrada1\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Registro com e-mail duplicado (409)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 409\", function () { pm.response.to.have.status(409); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fullName\": \"Maria da Silva\",\n  \"cpf\": \"52998224725\",\n  \"birthDate\": \"1950-03-10\",\n  \"phone\": \"11999998888\",\n  \"email\": \"{{patientEmail}}\",\n  \"password\": \"{{password}}\",\n  \"passwordConfirmation\": \"{{password}}\",\n  \"role\": \"PATIENT\",\n  \"termsVersion\": {{termsVersion}},\n  \"acceptTerms\": true,\n  \"acceptHealthData\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Autocadastro de administrador (400)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 400\", function () { pm.response.to.have.status(400); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fullName\": \"Admin Falso\",\n  \"cpf\": \"39053344705\",\n  \"birthDate\": \"1980-01-01\",\n  \"phone\": \"11999998888\",\n  \"email\": \"admin.falso@teste.com\",\n  \"password\": \"{{password}}\",\n  \"passwordConfirmation\": \"{{password}}\",\n  \"role\": \"ADMINISTRATOR\",\n  \"termsVersion\": {{termsVersion}},\n  \"acceptTerms\": true,\n  \"acceptHealthData\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Registro com versao de termos antiga (409)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 409\", function () { pm.response.to.have.status(409); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fullName\": \"Pessoa Teste\",\n  \"cpf\": \"86288366757\",\n  \"birthDate\": \"1950-03-10\",\n  \"phone\": \"11999998888\",\n  \"email\": \"antiga@teste.com\",\n  \"password\": \"{{password}}\",\n  \"passwordConfirmation\": \"{{password}}\",\n  \"role\": \"PATIENT\",\n  \"termsVersion\": 0,\n  \"acceptTerms\": true,\n  \"acceptHealthData\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Segundo fator sem passar pela senha (400)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 400\", function () { pm.response.to.have.status(400); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/2fa/verify",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "2fa",
+                    "verify"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{doctorEmail}}\",\n  \"code\": \"000000\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2 - Admin",
+      "item": [
+        {
+          "name": "Login",
+          "item": [
+            {
+              "name": "Login admin",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.environment.set(\"adminToken\", (function (json) { return json.accessToken; })(pm.response.json()));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Termos",
+          "item": [
+            {
+              "name": "Publicar Termos de Uso (todos)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.environment.set(\"termsVersion\", (function (json) { return json.version; })(pm.response.json()));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/terms",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "terms"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"TERMS_OF_USE\",\n  \"audience\": \"ALL\",\n  \"title\": \"Termos de Uso\",\n  \"content\": \"Texto dos termos de uso.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Rode uma vez antes do cadastro. Cada publicacao gera uma nova versao e pede novo aceite (RN25)."
+              }
+            },
+            {
+              "name": "Publicar Politica de Privacidade (todos)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.environment.set(\"privacyVersion\", (function (json) { return json.version; })(pm.response.json()));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/terms",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "terms"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"PRIVACY_POLICY\",\n  \"audience\": \"ALL\",\n  \"title\": \"Politica de Privacidade\",\n  \"content\": \"Texto da politica de privacidade.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Publicar Consentimento Especifico (so medicos)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/terms",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "terms"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"SPECIFIC_CONSENT\",\n  \"audience\": \"SPECIFIC\",\n  \"roles\": [\n    \"DOCTOR\"\n  ],\n  \"title\": \"Consentimento do medico\",\n  \"content\": \"Texto do consentimento especifico.\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Publico \"SPECIFIC\" exige a lista de perfis em \"roles\"."
+              }
+            }
+          ]
+        },
+        {
+          "name": "CRM",
+          "item": [
+            {
+              "name": "Medicos com CRM pendente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/doctors/pending-crm",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "doctors",
+                    "pending-crm"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Conferir CRM do medico",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 204\", function () { pm.response.to.have.status(204); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/doctors/{{doctorId}}/verify-crm",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "doctors",
+                    "{{doctorId}}",
+                    "verify-crm"
+                  ]
+                },
+                "description": "Conferencia manual (RN28). A acao fica registrada com autor e hora."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Erros esperados",
+          "item": [
+            {
+              "name": "Publicar termos sem token (401)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 401\", function () { pm.response.to.have.status(401); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/terms",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "terms"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"X\",\n  \"content\": \"Y\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Publicar termos como paciente (403)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 403\", function () { pm.response.to.have.status(403); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/terms",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "terms"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"X\",\n  \"content\": \"Y\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Publico especifico sem perfis (400)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 400\", function () { pm.response.to.have.status(400); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/terms",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "terms"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"X\",\n  \"content\": \"Y\",\n  \"audience\": \"SPECIFIC\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Rota de admin como paciente (403)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 403\", function () { pm.response.to.have.status(403); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/doctors/pending-crm",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "doctors",
+                    "pending-crm"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3 - Autenticado (qualquer perfil)",
+      "item": [
+        {
+          "name": "Termos",
+          "item": [
+            {
+              "name": "Historico de termos",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/terms/history",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "terms",
+                    "history"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Meus aceites",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/terms/accepted",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "terms",
+                    "accepted"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Aceitar termos vigentes",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/terms/accept",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "terms",
+                    "accept"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"version\": {{termsVersion}},\n  \"acceptTerms\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Para a Politica ou o Consentimento, envie a versao do documento (privacyVersion)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Perfil",
+          "item": [
+            {
+              "name": "Meu perfil",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/users/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "me"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Editar perfil e foto (link)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/users/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "me"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fullName\": \"Maria da Silva Santos\",\n  \"phone\": \"11977776666\",\n  \"photoUrl\": \"https://exemplo.com/fotos/maria.jpg\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "photoUrl \"\" remove a foto. CPF e CRM nao sao editaveis (RN31)."
+              }
+            },
+            {
+              "name": "Salvar endereco",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/users/me/address",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "me",
+                    "address"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cep\": \"01310100\",\n  \"street\": \"Avenida Paulista\",\n  \"number\": \"1000\",\n  \"complement\": \"Apto 12\",\n  \"city\": \"Sao Paulo\",\n  \"state\": \"SP\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Meu endereco",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/users/me/address",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "me",
+                    "address"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Buscar CEP (ViaCEP)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/addresses/cep/01310100",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "addresses",
+                    "cep",
+                    "01310100"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Segundo fator (MFA)",
+          "item": [
+            {
+              "name": "Status do segundo fator",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{doctorToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/users/me/mfa",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "me",
+                    "mfa"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Configurar autenticador (gera segredo)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.environment.set(\"mfaSecret\", (function (json) { return json.secret; })(pm.response.json()));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{doctorToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/users/me/mfa/authenticator/setup",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "me",
+                    "mfa",
+                    "authenticator",
+                    "setup"
+                  ]
+                },
+                "description": "Devolve o segredo e o link otpauth://. Cadastre no Microsoft Authenticator (escanear QR do link ou digitar o segredo)."
+              }
+            },
+            {
+              "name": "Confirmar autenticador",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{doctorToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/users/me/mfa/authenticator/confirm",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "me",
+                    "mfa",
+                    "authenticator",
+                    "confirm"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"{{mfaCode}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Informe em mfaCode o codigo atual do aplicativo. A partir dai o login do medico usa o aplicativo."
+              }
+            },
+            {
+              "name": "Desativar autenticador (volta ao e-mail)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{doctorToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/users/me/mfa/authenticator/disable",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "me",
+                    "mfa",
+                    "authenticator",
+                    "disable"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"{{mfaCode}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Use um codigo novo do aplicativo (o mesmo codigo nao vale duas vezes)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Notificacoes",
+          "item": [
+            {
+              "name": "Minhas notificacoes (paciente)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.environment.set(\"notificationId\", (function (json) { return json.length ? json[0].id : \"\"; })(pm.response.json()));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/notifications",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "notifications"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Minhas notificacoes (cuidador)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{caregiverToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/notifications",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "notifications"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Minhas notificacoes (medico)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{doctorToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/notifications",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "notifications"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Marcar como lida",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 204\", function () { pm.response.to.have.status(204); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/notifications/{{notificationId}}/read",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "notifications",
+                    "{{notificationId}}",
+                    "read"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4 - Paciente (perfil de saude)",
+      "item": [
+        {
+          "name": "Perfil de saude (inclui IMC e completude)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patientToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patients/me/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patients",
+                "me",
+                "profile"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tipo sanguineo e doenca declarada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patientToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patients/me/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patients",
+                "me",
+                "profile"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bloodType\": \"O_POSITIVE\",\n  \"declaredDisease\": \"Alzheimer inicial\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "O paciente declara a doenca uma unica vez; depois so o medico altera (409 se tentar, RN23)."
+          }
+        },
+        {
+          "name": "Adicionar alergia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patientToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patients/me/allergies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patients",
+                "me",
+                "allergies"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"MEDICATION\",\n  \"description\": \"Dipirona\",\n  \"severity\": \"SEVERE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Minhas alergias",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patientToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patients/me/allergies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patients",
+                "me",
+                "allergies"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Declarar nenhuma alergia conhecida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patientToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patients/me/allergy-status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patients",
+                "me",
+                "allergy-status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"NONE_KNOWN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "So vale se nao houver alergias cadastradas (409 caso contrario)."
+          }
+        },
+        {
+          "name": "Registrar peso e altura",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patientToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patients/me/measurements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patients",
+                "me",
+                "measurements"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weightKg\": 72.5,\n  \"heightM\": 1.68\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Valor fora do esperado responde 409 com requiresConfirmation; reenvie com \"confirmOutOfRange\": true (RN22)."
+          }
+        },
+        {
+          "name": "Historico de peso e altura",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patientToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patients/me/measurements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patients",
+                "me",
+                "measurements"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Contatos de emergencia (substitui a lista)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patientToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patients/me/emergency-contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patients",
+                "me",
+                "emergency-contacts"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contacts\": [\n    {\n      \"name\": \"Ana Silva\",\n      \"relationship\": \"Filha\",\n      \"phone\": \"11988887777\",\n      \"order\": 1\n    },\n    {\n      \"name\": \"Pedro Silva\",\n      \"relationship\": \"Filho\",\n      \"phone\": \"11977776666\",\n      \"order\": 2\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Meus contatos de emergencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patientToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patients/me/emergency-contacts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patients",
+                "me",
+                "emergency-contacts"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Historico de alteracoes sensiveis",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{patientToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patients/me/changes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "patients",
+                "me",
+                "changes"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5 - Medico (paciente vinculado)",
+      "item": [
+        {
+          "name": "Relatório de desempenho nos jogos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Métricas por jogo e aviso clínico', function () {",
+                  "  const report = pm.response.json();",
+                  "  for (const game of [report.familyRecognition, report.musicalBingo]) {",
+                  "    pm.expect(game).to.have.all.keys('completedSessions', 'answeredQuestions', 'errors', 'averageResponseMs');",
+                  "  }",
+                  "  pm.expect(report.notice).to.include('avaliação neuropsicológica');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctorToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctors/me/patients/{{patientId}}/game-performance",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctors", "me", "patients", "{{patientId}}", "game-performance"]
+            },
+            "description": "RN72 e RN108. Exige CRM conferido e vínculo ativo. Resume partidas concluídas do Reconhecimento de Familiares e do Bingo Musical."
+          }
+        },
+        {
+          "name": "Adicionar alergia ao paciente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.environment.set(\"allergyId\", (function (json) { return json.id; })(pm.response.json()));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctorToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctors/me/patients/{{patientId}}/allergies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctors",
+                "me",
+                "patients",
+                "{{patientId}}",
+                "allergies"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"FOOD\",\n  \"description\": \"Amendoim\",\n  \"severity\": \"MILD\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Exige CRM conferido e vinculo ativo com o paciente (RN28, RN33), senao 403."
+          }
+        },
+        {
+          "name": "Alterar alergia do paciente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctorToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctors/me/patients/{{patientId}}/allergies/{{allergyId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctors",
+                "me",
+                "patients",
+                "{{patientId}}",
+                "allergies",
+                "{{allergyId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"FOOD\",\n  \"description\": \"Amendoim e castanhas\",\n  \"severity\": \"SEVERE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remover alergia do paciente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctorToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctors/me/patients/{{patientId}}/allergies/{{allergyId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctors",
+                "me",
+                "patients",
+                "{{patientId}}",
+                "allergies",
+                "{{allergyId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Definir estado das alergias",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctorToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctors/me/patients/{{patientId}}/allergy-status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctors",
+                "me",
+                "patients",
+                "{{patientId}}",
+                "allergy-status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"NONE_KNOWN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Registrar e validar doenca",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{doctorToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctors/me/patients/{{patientId}}/declared-disease",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "doctors",
+                "me",
+                "patients",
+                "{{patientId}}",
+                "declared-disease"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"disease\": \"Alzheimer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6 - Vinculos",
+      "item": [
+        {
+          "name": "Cuidador e paciente",
+          "item": [
+            {
+              "name": "Cuidador convida paciente (e-mail cadastrado)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 202\", function () { pm.response.to.have.status(202); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{caregiverToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/caregiver-links/invitations",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "caregiver-links",
+                    "invitations"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{patientEmail}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Resposta 202 igual para qualquer e-mail (RN40)."
+              }
+            },
+            {
+              "name": "Cuidador convida e-mail sem conta",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 202\", function () { pm.response.to.have.status(202); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{caregiverToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/caregiver-links/invitations",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "caregiver-links",
+                    "invitations"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{newPatientEmail}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "O convite vira vinculo pendente quando a pessoa cria a conta de paciente e confirma o e-mail (RN44)."
+              }
+            },
+            {
+              "name": "Paciente lista vinculos de cuidado",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.environment.set(\"caregiverLinkId\", (function (json) { return json.length ? json[0].id : \"\"; })(pm.response.json()));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/caregiver-links",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "caregiver-links"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Cuidador lista seus pacientes",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{caregiverToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/caregiver-links",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "caregiver-links"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Paciente aceita convite",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/caregiver-links/{{caregiverLinkId}}/accept",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "caregiver-links",
+                    "{{caregiverLinkId}}",
+                    "accept"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Paciente recusa convite",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/caregiver-links/{{caregiverLinkId}}/decline",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "caregiver-links",
+                    "{{caregiverLinkId}}",
+                    "decline"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Encerrar vinculo de cuidado",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{caregiverToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/caregiver-links/{{caregiverLinkId}}/end",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "caregiver-links",
+                    "{{caregiverLinkId}}",
+                    "end"
+                  ]
+                },
+                "description": "Paciente ou cuidador podem encerrar (RN48)."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Medico e paciente",
+          "item": [
+            {
+              "name": "Buscar medico (diretorio)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/doctor-directory?q=paulo",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "doctor-directory"
+                  ],
+                  "query": [
+                    {
+                      "key": "q",
+                      "value": "paulo"
+                    }
+                  ]
+                },
+                "description": "So lista medicos com CRM conferido; minimo de 3 caracteres (RN42)."
+              }
+            },
+            {
+              "name": "Paciente pede vinculo ao medico",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.environment.set(\"doctorLinkId\", (function (json) { return json.id; })(pm.response.json()));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/doctor-links/requests",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "doctor-links",
+                    "requests"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"doctorId\": \"{{doctorId}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Cuidador pede vinculo em nome do paciente",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.environment.set(\"doctorLinkId\", (function (json) { return json.id; })(pm.response.json()));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{caregiverToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/doctor-links/requests",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "doctor-links",
+                    "requests"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"doctorId\": \"{{doctorId}}\",\n  \"patientId\": \"{{patientId}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Exige vinculo de cuidado ativo; o paciente ainda precisa autorizar (RN46)."
+              }
+            },
+            {
+              "name": "Medico convida paciente por e-mail",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 202\", function () { pm.response.to.have.status(202); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{doctorToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/doctor-links/invitations",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "doctor-links",
+                    "invitations"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{patientEmail}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Medico lista seus vinculos",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.environment.set(\"doctorLinkId\", (function (json) { return json.length ? json[0].id : \"\"; })(pm.response.json()));"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{doctorToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/doctor-links",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "doctor-links"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Paciente lista vinculos com medicos",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/doctor-links",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "doctor-links"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Medico aceita",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{doctorToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/doctor-links/{{doctorLinkId}}/accept",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "doctor-links",
+                    "{{doctorLinkId}}",
+                    "accept"
+                  ]
+                },
+                "description": "O vinculo so fica ACTIVE quando medico e paciente aceitaram (RN45)."
+              }
+            },
+            {
+              "name": "Paciente autoriza",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/doctor-links/{{doctorLinkId}}/accept",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "doctor-links",
+                    "{{doctorLinkId}}",
+                    "accept"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Recusar vinculo (medico)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{doctorToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/doctor-links/{{doctorLinkId}}/decline",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "doctor-links",
+                    "{{doctorLinkId}}",
+                    "decline"
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Encerrar vinculo (paciente)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{patientToken}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/doctor-links/{{doctorLinkId}}/end",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "doctor-links",
+                    "{{doctorLinkId}}",
+                    "end"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

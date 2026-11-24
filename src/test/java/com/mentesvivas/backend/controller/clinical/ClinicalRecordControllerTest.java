@@ -1,6 +1,13 @@
 package com.mentesvivas.backend.controller.clinical;
 
 import com.jayway.jsonpath.JsonPath;
+import com.mentesvivas.backend.entity.game.BingoRound;
+import com.mentesvivas.backend.entity.game.BingoSession;
+import com.mentesvivas.backend.entity.game.RecognitionQuestion;
+import com.mentesvivas.backend.entity.game.RecognitionSession;
+import com.mentesvivas.backend.repository.game.BingoRoundRepository;
+import com.mentesvivas.backend.repository.game.BingoSessionRepository;
+import com.mentesvivas.backend.repository.game.RecognitionSessionRepository;
 import com.mentesvivas.backend.support.ClearTemporaryStorage;
 import com.mentesvivas.backend.support.LinkTestSupport;
 import com.mentesvivas.backend.support.LinkTestSupport.Account;
@@ -14,6 +21,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 
 import static com.mentesvivas.backend.support.AuthTestSupport.bearer;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -32,6 +43,13 @@ class ClinicalRecordControllerTest {
     private MockMvc mockMvc;
     @Autowired
     private LinkTestSupport accounts;
+
+    @Autowired
+    private RecognitionSessionRepository recognitionSessions;
+    @Autowired
+    private BingoSessionRepository bingoSessions;
+    @Autowired
+    private BingoRoundRepository bingoRounds;
 
     private Account patient;
     private Account caregiver;
@@ -122,6 +140,78 @@ class ClinicalRecordControllerTest {
         mockMvc.perform(get("/api/patients/me/access-log").header("Authorization", bearer(patient.token())))
                 .andExpect(jsonPath("$.items[*].area", org.hamcrest.Matchers.containsInAnyOrder("PROFILE", "MEDICATIONS")))
                 .andExpect(jsonPath("$.items[0].accessorId").value(doctor.id().toString()));
+    }
+
+    @Test
+    void gamePerformanceReportsOnlyCompletedSessionsOfTheLinkedPatientAndLogsTheRead() throws Exception {
+        String route = "/game-performance";
+        as(doctor, route).andExpect(status().isForbidden());
+        linkDoctor();
+        as(patient, route).andExpect(status().isForbidden());
+        as(caregiver, route).andExpect(status().isForbidden());
+        as(doctor, route).andExpect(status().isOk())
+                .andExpect(jsonPath("$.familyRecognition.completedSessions").value(0))
+                .andExpect(jsonPath("$.musicalBingo.averageResponseMs").isEmpty());
+
+        saveRecognition(patient.id(), true);
+        saveRecognition(patient.id(), false);
+        Account other = accounts.patient("outro@exemplo.com", "39053344705");
+        saveRecognition(other.id(), true);
+        saveBingo(patient.id());
+
+        as(doctor, route).andExpect(status().isOk())
+                .andExpect(jsonPath("$.familyRecognition.completedSessions").value(1))
+                .andExpect(jsonPath("$.familyRecognition.answeredQuestions").value(2))
+                .andExpect(jsonPath("$.familyRecognition.errors").value(1))
+                .andExpect(jsonPath("$.familyRecognition.averageResponseMs").value(250.0))
+                .andExpect(jsonPath("$.musicalBingo.completedSessions").value(1))
+                .andExpect(jsonPath("$.musicalBingo.answeredQuestions").value(1))
+                .andExpect(jsonPath("$.musicalBingo.errors").value(2))
+                .andExpect(jsonPath("$.musicalBingo.averageResponseMs").value(400.0))
+                .andExpect(jsonPath("$.notice").value(org.hamcrest.Matchers.containsString("avaliação neuropsicológica")));
+
+        mockMvc.perform(get("/api/patients/me/access-log").header("Authorization", bearer(patient.token())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.items[0].area").value("GAME_PERFORMANCE"));
+    }
+
+    private void saveRecognition(UUID patientId, boolean completed) {
+        Instant now = Instant.now();
+        RecognitionSession session = new RecognitionSession();
+        session.setPatientId(patientId);
+        session.setStartedBy(patientId);
+        session.setStartedAt(now);
+        session.setQuestionShownAt(now);
+        session.setFinishedAt(completed ? now : null);
+        UUID memberId = UUID.randomUUID();
+        RecognitionQuestion first = new RecognitionQuestion(memberId, List.of(memberId));
+        first.recordError();
+        first.recordAnswer(200);
+        RecognitionQuestion second = new RecognitionQuestion(memberId, List.of(memberId));
+        second.recordAnswer(300);
+        session.getQuestions().addAll(List.of(first, second));
+        recognitionSessions.save(session);
+    }
+
+    private void saveBingo(UUID patientId) {
+        Instant now = Instant.now();
+        BingoSession session = new BingoSession();
+        session.setPatientId(patientId);
+        session.setStartedBy(patientId);
+        session.setStartedAt(now);
+        session.setFinishedAt(now);
+        session.setTotalRounds(1);
+        session.setErrorCount(2);
+        bingoSessions.save(session);
+        BingoRound round = new BingoRound();
+        round.setSessionId(session.getId());
+        round.setSoundId(UUID.randomUUID());
+        round.defineOptions(List.of(round.getSoundId()));
+        round.setAttempts(3);
+        round.setAnsweredAt(now);
+        round.setResponseMs(400L);
+        bingoRounds.save(round);
     }
 
     @Test
