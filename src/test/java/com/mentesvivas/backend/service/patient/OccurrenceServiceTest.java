@@ -42,13 +42,15 @@ class OccurrenceServiceTest {
     private OccurrenceRepository repository;
     @Mock
     private AccessLog accessLog;
+    @Mock
+    private AgitationProtocolService protocols;
 
     private OccurrenceService service;
     private User author;
 
     @BeforeEach
     void setUp() {
-        service = new OccurrenceService(access, repository, accessLog, Clock.fixed(NOW, ZoneOffset.UTC));
+        service = new OccurrenceService(access, repository, accessLog, Clock.fixed(NOW, ZoneOffset.UTC), protocols);
         author = new User();
         author.setId(UUID.randomUUID());
     }

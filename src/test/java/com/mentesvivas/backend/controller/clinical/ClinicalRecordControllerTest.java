@@ -13,6 +13,7 @@ import com.mentesvivas.backend.repository.game.BingoSessionRepository;
 import com.mentesvivas.backend.repository.game.RecognitionSessionRepository;
 import com.mentesvivas.backend.repository.audit.AuditEventRepository;
 import com.mentesvivas.backend.support.AuthTestSupport;
+import com.mentesvivas.backend.support.AdminTestSupport;
 import com.mentesvivas.backend.support.CapturedEmailSender;
 import com.mentesvivas.backend.support.ClearTemporaryStorage;
 import com.mentesvivas.backend.support.LinkTestSupport;
@@ -66,6 +67,8 @@ class ClinicalRecordControllerTest {
     private AuditEventRepository auditEvents;
     @Autowired
     private EntityManager entityManager;
+    @Autowired
+    private AdminTestSupport admin;
 
     private Account patient;
     private Account caregiver;
@@ -418,6 +421,44 @@ class ClinicalRecordControllerTest {
 
     private ResultActions configureAutonomy(String path, String body) throws Exception {
         return mockMvc.perform(put(path).header("Authorization", bearer(caregiver.token()))
+                .contentType(MediaType.APPLICATION_JSON).content(body));
+    }
+
+    @Test
+    void codedDiagnosisRequiresActiveLinkAndValidCatalogCodesAndPreservesHistory() throws Exception {
+        String adminToken = bearer(admin.token());
+        mockMvc.perform(post("/api/admin/cid10/catalog").header("Authorization", adminToken)
+                .contentType(MediaType.APPLICATION_JSON).content("""
+                        {"entries":[{"code":"G300","description":"Entrada de teste"},
+                                    {"code":"I10","description":"Entrada secundária de teste"}]}
+                        """))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.imported").value(2));
+        mockMvc.perform(get("/api/doctors/me/cid10").param("code", "g30")
+                .header("Authorization", bearer(doctor.token())))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].code").value("G30.0"));
+        String diagnosis = """
+                {"disease":"Condição validada","primaryCid":"g300","secondaryCids":["I10"]}
+                """;
+        confirmDiagnosis(diagnosis).andExpect(status().isForbidden());
+        linkDoctor();
+        confirmDiagnosis(diagnosis.replace("I10", "X99")).andExpect(status().isBadRequest());
+        confirmDiagnosis(diagnosis.replace("I10", "G30.0")).andExpect(status().isBadRequest());
+        confirmDiagnosis(diagnosis).andExpect(status().isCreated())
+                .andExpect(jsonPath("$.primaryCid").value("G30.0"))
+                .andExpect(jsonPath("$.secondaryCids[0]").value("I10"))
+                .andExpect(jsonPath("$.recordedBy").value(doctor.id().toString()));
+        confirmDiagnosis(diagnosis.replace("Condição validada", "Condição revisada"))
+                .andExpect(status().isCreated());
+        as(doctor, "/diagnoses").andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].disease",
+                        org.hamcrest.Matchers.containsInAnyOrder("Condição validada", "Condição revisada")));
+        as(doctor, "/summary").andExpect(status().isOk())
+                .andExpect(jsonPath("$.declaredDisease").value("Condição revisada"))
+                .andExpect(jsonPath("$.declaredDiseaseValidated").value(true));
+    }
+
+    private ResultActions confirmDiagnosis(String body) throws Exception {
+        return mockMvc.perform(post(base() + "/diagnoses").header("Authorization", bearer(doctor.token()))
                 .contentType(MediaType.APPLICATION_JSON).content(body));
     }
 

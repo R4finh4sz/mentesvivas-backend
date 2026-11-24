@@ -54,6 +54,8 @@ class DoctorClinicalServiceTest {
     private PatientProfileLoader profileLoader;
     @Mock
     private SensitiveChangeRecorder changeRecorder;
+    @Mock
+    private DiagnosisService diagnosis;
 
     private DoctorClinicalService service;
     private User doctor;
@@ -61,7 +63,8 @@ class DoctorClinicalServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new DoctorClinicalService(access, allergyRepository, profileLoader, changeRecorder, accessLog);
+        service = new DoctorClinicalService(access, allergyRepository, profileLoader, changeRecorder, accessLog,
+                diagnosis);
         doctor = new User();
         doctor.setId(UUID.randomUUID());
         profile = new PatientProfile(PATIENT);

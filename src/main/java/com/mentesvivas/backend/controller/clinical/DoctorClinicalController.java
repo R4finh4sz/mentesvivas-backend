@@ -1,6 +1,8 @@
 package com.mentesvivas.backend.controller.clinical;
 
 import com.mentesvivas.backend.dto.clinical.DeclareDiseaseRequest;
+import com.mentesvivas.backend.dto.clinical.DeclareDiagnosisRequest;
+import com.mentesvivas.backend.dto.clinical.DiagnosisResponse;
 import com.mentesvivas.backend.dto.clinical.DefineHydrationGoalRequest;
 import com.mentesvivas.backend.dto.patient.AddAllergyRequest;
 import com.mentesvivas.backend.dto.patient.AllergyResponse;
@@ -8,17 +10,22 @@ import com.mentesvivas.backend.dto.patient.AllergyStatusResponse;
 import com.mentesvivas.backend.dto.patient.SetAllergyStatusRequest;
 import com.mentesvivas.backend.service.clinical.DoctorClinicalService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -56,6 +63,20 @@ public class DoctorClinicalController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void validateDisease(@PathVariable UUID patientId, @Valid @RequestBody DeclareDiseaseRequest body) {
         service.validateDisease(patientId, body);
+    }
+
+    @PostMapping("/diagnoses")
+    @ResponseStatus(HttpStatus.CREATED)
+    public DiagnosisResponse confirmDiagnosis(@PathVariable UUID patientId,
+                                              @Valid @RequestBody DeclareDiagnosisRequest body) {
+        return service.confirmDiagnosis(patientId, body);
+    }
+
+    @GetMapping("/diagnoses")
+    public List<DiagnosisResponse> diagnoses(@PathVariable UUID patientId,
+                                             @RequestParam(defaultValue = "0") @Min(0) int page,
+                                             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+        return service.diagnoses(patientId, page, size);
     }
 
     @PutMapping("/hydration-goal")

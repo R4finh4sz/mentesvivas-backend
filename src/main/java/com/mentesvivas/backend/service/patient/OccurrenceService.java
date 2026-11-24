@@ -1,5 +1,6 @@
 package com.mentesvivas.backend.service.patient;
 
+import com.mentesvivas.backend.dto.patient.AgitationProtocolResponse;
 import com.mentesvivas.backend.dto.patient.OccurrenceResponse;
 import com.mentesvivas.backend.dto.patient.RecordOccurrenceRequest;
 import com.mentesvivas.backend.entity.audit.PatientDataArea;
@@ -27,6 +28,7 @@ public class OccurrenceService {
     private final OccurrenceRepository repository;
     private final AccessLog accessLog;
     private final Clock clock;
+    private final AgitationProtocolService protocols;
 
     @Transactional
     public OccurrenceResponse record(UUID patientId, RecordOccurrenceRequest request) {
@@ -46,7 +48,12 @@ public class OccurrenceService {
         occurrence.setSource(source);
         occurrence.setRecordedBy(author.getId());
         occurrence.setOccurredAt(clock.instant());
-        return PatientMapper.toResponse(repository.save(occurrence));
+        AgitationProtocolResponse protocol = request.type() == OccurrenceType.AGITATION
+                ? protocols.forSeverity(request.severity()) : null;
+        if (protocol != null) {
+            occurrence.setAgitationProtocolId(protocol.id());
+        }
+        return PatientMapper.toResponse(repository.save(occurrence), protocol);
     }
 
     @Transactional

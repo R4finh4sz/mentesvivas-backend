@@ -28,6 +28,7 @@ public class VitalSignService {
     private final VitalSignValidator validator;
     private final AccessLog accessLog;
     private final Clock clock;
+    private final ClinicalRangeService clinicalRanges;
 
     @Transactional
     public VitalSignResponse record(UUID patientId, RecordVitalSignRequest request) {
@@ -48,7 +49,10 @@ public class VitalSignService {
         sign.setSource(request.source() == null ? MeasurementSource.TYPED : request.source());
         sign.setRecordedBy(author.getId());
         sign.setMeasuredAt(clock.instant());
-        return PatientMapper.toResponse(repository.save(sign));
+        clinicalRanges.classify(sign);
+        VitalSign saved = repository.save(sign);
+        clinicalRanges.notifyIfCritical(saved);
+        return PatientMapper.toResponse(saved);
     }
 
     @Transactional

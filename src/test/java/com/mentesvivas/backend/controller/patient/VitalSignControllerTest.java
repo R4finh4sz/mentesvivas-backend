@@ -81,6 +81,49 @@ class VitalSignControllerTest {
     }
 
     @Test
+    void approvedRangesUseInclusiveBoundariesAndNotifyOnlyForRed() throws Exception {
+        String route = "/api/doctors/me/vital-sign-ranges";
+        String bands = """
+                {"ranges":[
+                  {"metric":"SYSTOLIC","color":"GREEN"},
+                  {"metric":"DIASTOLIC","color":"GREEN"},
+                  {"metric":"HEART_RATE","color":"GREEN"},
+                  {"metric":"FASTING_GLUCOSE","color":"GREEN"},
+                  {"metric":"POSTPRANDIAL_GLUCOSE","color":"GREEN"},
+                  {"metric":"POSTPRANDIAL_GLUCOSE","lowerBound":150,"color":"RED"},
+                  {"metric":"TEMPERATURE","color":"GREEN"},
+                  {"metric":"OXYGEN_SATURATION","color":"GREEN"}
+                ]}
+                """;
+        linkCaregiver();
+        record(patient, patient, VALID).andExpect(status().isCreated())
+                .andExpect(jsonPath("$.clinicalColor").isEmpty());
+        publishRanges(route, patient, bands).andExpect(status().isForbidden());
+        publishRanges(route, doctor, bands.replace("\"lowerBound\":150", "\"lowerBound\":null"))
+                .andExpect(status().isBadRequest());
+        String result = publishRanges(route, doctor, bands).andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String policyId = JsonPath.read(result, "$.id");
+        mockMvc.perform(get("/api/clinical/vital-sign-ranges").header("Authorization", bearer(caregiver.token())))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(policyId));
+        record(patient, patient, "{\"glucose\":149,\"glucoseType\":\"POSTPRANDIAL\"}")
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.clinicalColor").value("GREEN"));
+        record(patient, patient, "{\"glucose\":150,\"glucoseType\":\"FASTING\"}")
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.clinicalColor").value("GREEN"));
+        record(patient, patient, "{\"glucose\":150,\"glucoseType\":\"POSTPRANDIAL\"}")
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.clinicalColor").value("RED"))
+                .andExpect(jsonPath("$.clinicalPolicyId").value(policyId));
+        mockMvc.perform(get("/api/notifications").header("Authorization", bearer(caregiver.token())))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[?(@.type == 'CRITICAL_MEASUREMENT')].type",
+                        org.hamcrest.Matchers.contains("CRITICAL_MEASUREMENT")));
+    }
+
+    private ResultActions publishRanges(String route, Account actor, String body) throws Exception {
+        return mockMvc.perform(post(route).header("Authorization", bearer(actor.token()))
+                .contentType(MediaType.APPLICATION_JSON).content(body));
+    }
+
+    @Test
     void patientRecordsAndReadsOwnVitalSigns() throws Exception {
         record(patient, patient, VALID)
                 .andExpect(status().isCreated())

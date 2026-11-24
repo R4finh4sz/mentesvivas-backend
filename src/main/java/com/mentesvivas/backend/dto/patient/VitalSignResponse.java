@@ -1,6 +1,7 @@
 package com.mentesvivas.backend.dto.patient;
 
 import com.mentesvivas.backend.entity.patient.GlucoseType;
+import com.mentesvivas.backend.entity.patient.ClinicalColor;
 import com.mentesvivas.backend.entity.patient.MeasurementSource;
 
 import java.math.BigDecimal;
@@ -20,6 +21,8 @@ public record VitalSignResponse(
         MeasurementSource source,
         boolean checkAgainstOriginal,
         UUID recordedBy,
-        Instant measuredAt
+        Instant measuredAt,
+        ClinicalColor clinicalColor,
+        UUID clinicalPolicyId
 ) {
 }
