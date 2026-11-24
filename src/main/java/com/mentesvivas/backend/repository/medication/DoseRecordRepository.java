@@ -18,6 +18,9 @@ public interface DoseRecordRepository extends JpaRepository<DoseRecord, UUID> {
 
     Optional<DoseRecord> findByIdAndPatientId(UUID id, UUID patientId);
 
+    Optional<DoseRecord> findByMedicationIdAndRecordedByAndClientOperationId(
+            UUID medicationId, UUID recordedBy, UUID clientOperationId);
+
     List<DoseRecord> findByPatientIdAndScheduledForBetweenOrderByScheduledForDesc(UUID patientId, Instant from,
                                                                                   Instant to);
 

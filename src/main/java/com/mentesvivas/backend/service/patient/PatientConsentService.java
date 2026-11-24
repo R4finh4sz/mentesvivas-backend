@@ -1,5 +1,6 @@
 package com.mentesvivas.backend.service.patient;
 
+import com.mentesvivas.backend.dto.patient.HealthDataConsentResponse;
 import com.mentesvivas.backend.dto.patient.PatientConsentResponse;
 import com.mentesvivas.backend.entity.audit.AuditEventType;
 import com.mentesvivas.backend.entity.audit.AuditRecord;
@@ -37,6 +38,34 @@ public class PatientConsentService {
     private final EntityManager entityManager;
     private final AuditTrail audit;
     private final Clock clock;
+
+    @Transactional(readOnly = true)
+    public HealthDataConsentResponse healthData(UUID patientId) {
+        return healthDataView(lock(patientId, LockModeType.NONE));
+    }
+
+    @Transactional
+    public HealthDataConsentResponse decideHealthData(UUID patientId, boolean granted) {
+        User patient = lock(patientId, LockModeType.PESSIMISTIC_WRITE);
+        boolean wasGranted = patient.getHealthDataConsentRevokedAt() == null;
+        if (wasGranted != granted) {
+            if (granted) {
+                patient.setHealthDataConsentedAt(clock.instant());
+                patient.setHealthDataConsentRevokedAt(null);
+            } else {
+                patient.setHealthDataConsentRevokedAt(clock.instant());
+            }
+            audit.record(AuditRecord.of(AuditEventType.PATIENT_CONSENT_CHANGED, patientId)
+                    .forPatient(patientId)
+                    .withValues("HEALTH_DATA:" + wasGranted, "HEALTH_DATA:" + granted));
+        }
+        return healthDataView(patient);
+    }
+
+    private static HealthDataConsentResponse healthDataView(User patient) {
+        return new HealthDataConsentResponse(patient.getHealthDataConsentRevokedAt() == null,
+                patient.getHealthDataConsentedAt(), patient.getHealthDataConsentRevokedAt());
+    }
 
     @Transactional(readOnly = true)
     public List<PatientConsentResponse> listOwn(UUID patientId) {
@@ -115,10 +144,12 @@ public class PatientConsentService {
         }).toList();
     }
 
-    private void lock(UUID patientId, LockModeType mode) {
-        if (entityManager.find(User.class, patientId, mode) == null) {
+    private User lock(UUID patientId, LockModeType mode) {
+        User patient = entityManager.find(User.class, patientId, mode);
+        if (patient == null) {
             throw new ResourceNotFoundException("Paciente não encontrado.");
         }
+        return patient;
     }
 
     private static PatientConsentResponse view(PatientConsent consent) {

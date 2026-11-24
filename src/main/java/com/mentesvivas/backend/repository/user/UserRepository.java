@@ -21,6 +21,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByCpf(String cpf);
 
+    boolean existsByIdAndHealthDataConsentRevokedAtIsNotNull(UUID id);
+
     List<User> findByRoleAndCrmVerifiedFalseOrderByCreatedAtAsc(Role role);
 
     Page<User> findByRole(Role role, Pageable pageable);

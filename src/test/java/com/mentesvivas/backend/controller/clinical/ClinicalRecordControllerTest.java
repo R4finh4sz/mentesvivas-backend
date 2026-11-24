@@ -114,6 +114,45 @@ class ClinicalRecordControllerTest {
     }
 
     @Test
+    void healthConsentRevocationBlocksCareUntilPatientAcceptsAgain() throws Exception {
+        linkDoctor();
+        accept("/api/caregiver-links/invitations", "/api/caregiver-links", caregiver);
+        String consent = "/api/patients/me/consents/health-data";
+        String patientToken = bearer(patient.token());
+        String caregiverToken = bearer(caregiver.token());
+        String vitals = "/api/care/patients/" + patient.id() + "/vital-signs";
+        String measurement = "{\"heartRate\":70}";
+
+        mockMvc.perform(get(consent).header("Authorization", patientToken))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.granted").value(true));
+        mockMvc.perform(put(consent).header("Authorization", patientToken)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"granted\":false}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.granted").value(false))
+                .andExpect(jsonPath("$.revokedAt").isNotEmpty());
+
+        mockMvc.perform(get(vitals).header("Authorization", patientToken)).andExpect(status().isForbidden());
+        mockMvc.perform(post(vitals).header("Authorization", caregiverToken)
+                .contentType(MediaType.APPLICATION_JSON).content(measurement)).andExpect(status().isForbidden());
+        selectPainScale("NUMERIC").andExpect(status().isForbidden());
+        mockMvc.perform(put(consent).header("Authorization", caregiverToken)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"granted\":true}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/users/me/data-requests").header("Authorization", patientToken))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/patients/me/sos").header("Authorization", patientToken))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(put(consent).header("Authorization", patientToken)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"granted\":true}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.granted").value(true))
+                .andExpect(jsonPath("$.acceptedAt").isNotEmpty());
+        mockMvc.perform(get(vitals).header("Authorization", patientToken)).andExpect(status().isOk());
+        mockMvc.perform(post(vitals).header("Authorization", caregiverToken)
+                .contentType(MediaType.APPLICATION_JSON).content(measurement)).andExpect(status().isCreated());
+        selectPainScale("NUMERIC").andExpect(status().isOk());
+    }
+
+    @Test
     void summaryShowsRegistrationDataAndKeepsUnvalidatedInformationLabeled() throws Exception {
         linkDoctor();
         mockMvc.perform(put("/api/patients/me/profile").header("Authorization", bearer(patient.token()))
@@ -353,19 +392,26 @@ class ClinicalRecordControllerTest {
         String faces = "{\"scale\":\"WONG_BAKER\",\"score\":6}";
         pain(path, numeric).andExpect(status().isForbidden());
         accept("/api/caregiver-links/invitations", "/api/caregiver-links", caregiver);
-        pain(path, numeric).andExpect(status().isConflict());
+        mockMvc.perform(get(path + "/pain-scale").header("Authorization", bearer(caregiver.token())))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.scale").value("NUMERIC"));
+        pain(path, numeric).andExpect(status().isCreated());
         selectPainScale("NUMERIC").andExpect(status().isForbidden());
         linkDoctor();
         selectPainScale("NUMERIC").andExpect(status().isOk()).andExpect(jsonPath("$.allowedScores.length()").value(11));
-        pain(path, numeric).andExpect(status().isCreated());
         selectPainScale("WONG_BAKER").andExpect(status().isOk());
         pain(path, numeric).andExpect(status().isConflict());
         pain(path, faces.replace("6", "7")).andExpect(status().isBadRequest());
         pain(path, faces).andExpect(status().isCreated()).andExpect(jsonPath("$.recordedBy").value(caregiver.id().toString()));
+        selectPainScale("PAINAD").andExpect(status().isOk());
+        pain(path, "{\"scale\":\"PAINAD\",\"score\":10}").andExpect(status().isCreated());
+        selectPainScale("DOLOPLUS_2").andExpect(status().isOk());
+        pain(path, "{\"scale\":\"DOLOPLUS_2\",\"score\":31}").andExpect(status().isBadRequest());
+        pain(path, "{\"scale\":\"DOLOPLUS_2\",\"score\":30}").andExpect(status().isCreated());
 
         mockMvc.perform(get(path + "/pain-records").header("Authorization", bearer(doctor.token())))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].scale", org.hamcrest.Matchers.containsInAnyOrder("NUMERIC", "WONG_BAKER")));
+                .andExpect(jsonPath("$[*].scale",
+                        org.hamcrest.Matchers.containsInAnyOrder("NUMERIC", "WONG_BAKER", "PAINAD", "DOLOPLUS_2")));
     }
 
     private ResultActions selectPainScale(String scale) throws Exception {

@@ -1,5 +1,6 @@
 package com.mentesvivas.backend.entity.alert;
 
+import com.mentesvivas.backend.entity.notification.NotificationType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -34,6 +35,15 @@ public class SosAlert {
     @Column(nullable = false)
     private Instant createdAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private NotificationType type;
+
+    private UUID sourceId;
+
+    @Column(nullable = false)
+    private UUID createdBy;
+
     private Instant seenAt;
     private UUID seenBy;
     private Instant acknowledgedAt;
@@ -42,7 +52,14 @@ public class SosAlert {
     private UUID resolvedBy;
 
     public SosAlert(UUID patientId, Instant createdAt) {
+        this(patientId, patientId, NotificationType.SOS_ALERT, null, createdAt);
+    }
+
+    public SosAlert(UUID patientId, UUID createdBy, NotificationType type, UUID sourceId, Instant createdAt) {
         this.patientId = patientId;
+        this.createdBy = createdBy;
+        this.type = type;
+        this.sourceId = sourceId;
         this.createdAt = createdAt;
         this.status = AlertStatus.CREATED;
     }

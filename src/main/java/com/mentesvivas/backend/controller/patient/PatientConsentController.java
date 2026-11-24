@@ -1,5 +1,6 @@
 package com.mentesvivas.backend.controller.patient;
 
+import com.mentesvivas.backend.dto.patient.HealthDataConsentResponse;
 import com.mentesvivas.backend.dto.patient.PatientConsentResponse;
 import com.mentesvivas.backend.entity.patient.ConsentScope;
 import com.mentesvivas.backend.security.CurrentPatient;
@@ -22,6 +23,16 @@ public class PatientConsentController {
 
     private final PatientConsentService consent;
     private final CurrentPatient patient;
+
+    @GetMapping("/api/patients/me/consents/health-data")
+    public HealthDataConsentResponse healthData() {
+        return consent.healthData(patient.get().getId());
+    }
+
+    @PutMapping("/api/patients/me/consents/health-data")
+    public HealthDataConsentResponse decideHealthData(@Valid @RequestBody Decision body) {
+        return consent.decideHealthData(patient.get().getId(), body.granted());
+    }
 
     @GetMapping("/api/patients/me/consents")
     public List<PatientConsentResponse> mine() {

@@ -5,15 +5,14 @@ import com.mentesvivas.backend.dto.patient.GeofenceRequest;
 import com.mentesvivas.backend.dto.patient.GeofenceResponse;
 import com.mentesvivas.backend.entity.audit.AuditEventType;
 import com.mentesvivas.backend.entity.audit.AuditRecord;
-import com.mentesvivas.backend.entity.link.LinkStatus;
 import com.mentesvivas.backend.entity.notification.NotificationType;
 import com.mentesvivas.backend.entity.patient.ConsentScope;
 import com.mentesvivas.backend.entity.patient.Geofence;
 import com.mentesvivas.backend.entity.patient.Geofence.Position;
 import com.mentesvivas.backend.exception.common.ResourceNotFoundException;
-import com.mentesvivas.backend.repository.link.CaregiverPatientLinkRepository;
 import com.mentesvivas.backend.repository.patient.GeofenceRepository;
 import com.mentesvivas.backend.security.CurrentPatient;
+import com.mentesvivas.backend.service.alert.CriticalAlertService;
 import com.mentesvivas.backend.service.audit.AuditTrail;
 import com.mentesvivas.backend.service.link.CaregiverPatientAccess;
 import com.mentesvivas.backend.service.notification.NotificationService;
@@ -32,7 +31,7 @@ public class GeofenceService {
 
     private final CurrentPatient currentPatient;
     private final CaregiverPatientAccess caregivers;
-    private final CaregiverPatientLinkRepository links;
+    private final CriticalAlertService alerts;
     private final PatientConsentService consent;
     private final GeofenceRepository fences;
     private final AuditTrail audit;
@@ -88,9 +87,8 @@ public class GeofenceService {
             position = Position.INSIDE;
         }
         if (zone.updatePosition(position)) {
-            links.findByPatientIdAndStatus(patientId, LinkStatus.ACTIVE).forEach(link ->
-                    notifications.notify(link.getCaregiverId(), NotificationType.GEOFENCE_EXIT, patientId,
-                            "O paciente foi localizado fora da cerca virtual."));
+            alerts.create(patientId, patientId, NotificationType.GEOFENCE_EXIT, null,
+                    "O paciente foi localizado fora da cerca virtual.");
         }
         return position;
     }

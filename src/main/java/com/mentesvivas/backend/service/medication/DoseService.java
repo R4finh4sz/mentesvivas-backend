@@ -47,6 +47,13 @@ public class DoseService {
         User author = access.requireWriter(patientId);
         access.requireCareRecordsAllowed(author);
         Medication medication = lock(patientId, medicationId);
+        if (request.clientOperationId() != null) {
+            var previous = repository.findByMedicationIdAndRecordedByAndClientOperationId(
+                    medicationId, author.getId(), request.clientOperationId());
+            if (previous.isPresent()) {
+                return DoseResponse.from(previous.get());
+            }
+        }
         if (!medication.isActive()) {
             throw new ConflictException("Este medicamento esta inativo.");
         }
@@ -55,7 +62,9 @@ public class DoseService {
                 .findFirstByMedicationIdAndScheduledForAndDuplicateFalse(medicationId, request.scheduledFor());
         DoseRecord dose = newDose(patientId, medicationId, request, author, now);
         if (original.isPresent()) {
-            rejectDoubleClick(original.get(), author, now);
+            if (request.clientOperationId() == null) {
+                rejectDoubleClick(original.get(), author, now);
+            }
             dose.setDuplicate(true);
         } else if (request.status() == DoseStatus.TAKEN) {
             dose.setStockDiscounted(stockEffect.discount(medication));
@@ -107,6 +116,7 @@ public class DoseService {
         dose.setStockDiscounted(BigDecimal.ZERO);
         dose.setRecordedBy(author.getId());
         dose.setRecordedAt(now);
+        dose.setClientOperationId(request.clientOperationId());
         return dose;
     }
 

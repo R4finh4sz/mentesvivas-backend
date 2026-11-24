@@ -64,7 +64,7 @@ public class PainAssessmentService {
     public PainAssessment.Selection selection(UUID patientId) {
         recordRead(patientId);
         return selections.findById(patientId).map(PainAssessmentService::view)
-                .orElseGet(() -> new PainAssessment.Selection(null, List.of(), null));
+                .orElseGet(() -> new PainAssessment.Selection(PainScale.DEFAULT, PainScale.DEFAULT.scores(), null));
     }
 
     @Transactional
@@ -72,7 +72,7 @@ public class PainAssessmentService {
         User caregiver = caregivers.requireRepresentativeOf(patientId);
         lockPatient(patientId);
         PainScale selected = selections.findById(patientId).map(PainScaleSelection::getScale)
-                .orElseThrow(() -> new ConflictException("O médico precisa definir a escala de dor."));
+                .orElse(PainScale.DEFAULT);
         if (scale != selected) {
             throw new ConflictException("A escala de dor mudou. Consulte a escala atual.");
         }

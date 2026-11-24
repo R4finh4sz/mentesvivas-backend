@@ -2,6 +2,7 @@ package com.mentesvivas.backend.service.patient;
 
 import com.mentesvivas.backend.dto.patient.RecordOccurrenceRequest;
 import com.mentesvivas.backend.entity.audit.PatientDataArea;
+import com.mentesvivas.backend.entity.notification.NotificationType;
 import com.mentesvivas.backend.entity.patient.MeasurementSource;
 import com.mentesvivas.backend.entity.patient.Occurrence;
 import com.mentesvivas.backend.entity.patient.OccurrenceSeverity;
@@ -9,6 +10,7 @@ import com.mentesvivas.backend.entity.patient.OccurrenceType;
 import com.mentesvivas.backend.entity.user.User;
 import com.mentesvivas.backend.exception.patient.ImpossibleValueException;
 import com.mentesvivas.backend.repository.patient.OccurrenceRepository;
+import com.mentesvivas.backend.service.alert.CriticalAlertService;
 import com.mentesvivas.backend.service.audit.AccessLog;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,12 +47,16 @@ class OccurrenceServiceTest {
     @Mock
     private AgitationProtocolService protocols;
 
+    @Mock
+    private CriticalAlertService alerts;
+
     private OccurrenceService service;
     private User author;
 
     @BeforeEach
     void setUp() {
-        service = new OccurrenceService(access, repository, accessLog, Clock.fixed(NOW, ZoneOffset.UTC), protocols);
+        service = new OccurrenceService(access, repository, accessLog, Clock.fixed(NOW, ZoneOffset.UTC),
+                protocols, alerts);
         author = new User();
         author.setId(UUID.randomUUID());
     }
@@ -75,6 +81,8 @@ class OccurrenceServiceTest {
         assertThat(saved.getValue().getDescription()).isEqualTo("caiu no banheiro");
         assertThat(response.needsHospital()).isTrue();
         assertThat(response.source()).isEqualTo(MeasurementSource.TYPED);
+        verify(alerts).create(PATIENT, author.getId(), NotificationType.FALL_ALERT, response.id(),
+                "Foi registrada uma queda do paciente.");
     }
 
     @Test
