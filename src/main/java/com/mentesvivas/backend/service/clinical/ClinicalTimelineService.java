@@ -1,6 +1,7 @@
 package com.mentesvivas.backend.service.clinical;
 
 import com.mentesvivas.backend.dto.clinical.TimelineCategory;
+import com.mentesvivas.backend.dto.clinical.TimelineDose;
 import com.mentesvivas.backend.dto.clinical.TimelineResponse;
 import com.mentesvivas.backend.dto.patient.MeasurementResponse;
 import com.mentesvivas.backend.dto.patient.OccurrenceResponse;
@@ -10,6 +11,7 @@ import com.mentesvivas.backend.entity.audit.PatientDataArea;
 import com.mentesvivas.backend.entity.patient.RoutineType;
 import com.mentesvivas.backend.entity.user.User;
 import com.mentesvivas.backend.mapper.patient.PatientMapper;
+import com.mentesvivas.backend.repository.medication.DoseRecordRepository;
 import com.mentesvivas.backend.repository.patient.BodyMeasurementRepository;
 import com.mentesvivas.backend.repository.patient.OccurrenceRepository;
 import com.mentesvivas.backend.repository.patient.RoutineRecordRepository;
@@ -36,6 +38,7 @@ public class ClinicalTimelineService {
     private final RoutineRecordRepository routineRepository;
     private final OccurrenceRepository occurrenceRepository;
     private final BodyMeasurementRepository measurementRepository;
+    private final DoseRecordRepository doses;
     private final AccessLog accessLog;
 
     @Transactional
@@ -45,6 +48,7 @@ public class ClinicalTimelineService {
         accessLog.record(doctor.getId(), patientId, PatientDataArea.MEASUREMENTS);
         accessLog.record(doctor.getId(), patientId, PatientDataArea.ROUTINE);
         accessLog.record(doctor.getId(), patientId, PatientDataArea.OCCURRENCES);
+        accessLog.record(doctor.getId(), patientId, PatientDataArea.MEDICATIONS);
 
         List<VitalSignResponse> vitalSigns = vitalSignRepository
                 .findByPatientIdAndMeasuredAtBetweenOrderByMeasuredAtDesc(patientId, period.from(), period.to())
@@ -59,15 +63,17 @@ public class ClinicalTimelineService {
                         patientId, period.from(), period.to())
                 .stream().map(PatientMapper::toResponse).toList();
 
+        List<TimelineDose> medicationDoses = doses.findTimelineDoses(patientId, period.from(), period.to());
         List<TimelineCategory> missing = new ArrayList<>();
         addIfEmpty(missing, TimelineCategory.VITAL_SIGNS, vitalSigns);
         addIfEmpty(missing, TimelineCategory.MOOD, moods);
         addIfEmpty(missing, TimelineCategory.SLEEP, sleeps);
         addIfEmpty(missing, TimelineCategory.OCCURRENCES, occurrences);
         addIfEmpty(missing, TimelineCategory.WEIGHT, weights);
+        addIfEmpty(missing, TimelineCategory.MEDICATION_DOSES, medicationDoses);
 
         return new TimelineResponse(period.from(), period.to(), missing.size() < TimelineCategory.values().length,
-                missing, vitalSigns, moods, sleeps, occurrences, weights);
+                missing, vitalSigns, moods, sleeps, occurrences, weights, medicationDoses);
     }
 
     private List<RoutineRecordResponse> routine(UUID patientId, RoutineType type, TimelinePeriod period) {

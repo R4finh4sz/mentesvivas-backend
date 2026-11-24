@@ -5,5 +5,6 @@ public enum TimelineCategory {
     MOOD,
     SLEEP,
     OCCURRENCES,
-    WEIGHT
+    WEIGHT,
+    MEDICATION_DOSES
 }

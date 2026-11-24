@@ -17,6 +17,7 @@ public record TimelineResponse(
         List<RoutineRecordResponse> moods,
         List<RoutineRecordResponse> sleeps,
         List<OccurrenceResponse> occurrences,
-        List<MeasurementResponse> weights
+        List<MeasurementResponse> weights,
+        List<TimelineDose> medicationDoses
 ) {
 }
