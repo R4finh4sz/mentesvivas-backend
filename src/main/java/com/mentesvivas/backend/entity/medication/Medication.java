@@ -58,6 +58,8 @@ public class Medication {
     @Column(nullable = false, length = 15)
     private MedicationOrigin origin;
 
+    private UUID prescriptionId;
+
     @Column(nullable = false)
     private boolean active = true;
 

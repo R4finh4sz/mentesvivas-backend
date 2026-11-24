@@ -7,5 +7,7 @@ public enum NotificationType {
     LINK_ACCEPTED,
     LINK_DECLINED,
     LINK_ENDED,
-    SOS_ALERT
+    SOS_ALERT,
+    PRESCRIPTION_AVAILABLE,
+    PRESCRIPTION_EXPIRING
 }
